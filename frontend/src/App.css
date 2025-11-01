@@ -212,10 +212,11 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .email-card-content {
-  padding: 1rem !important;
+  padding: 1.25rem !important;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 1rem;
 }
 
 .email-info {
