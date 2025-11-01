@@ -232,8 +232,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .email-address {
-  font-size: 0.875rem;
-  font-weight: 500;
+  font-size: 0.9rem;
+  font-weight: 600;
   color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
