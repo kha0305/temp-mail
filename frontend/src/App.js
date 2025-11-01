@@ -126,9 +126,48 @@ function App() {
     }
   };
 
-  const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text);
-    toast.success('Đã sao chép vào clipboard!');
+  const copyToClipboard = async (text) => {
+    try {
+      // Try modern clipboard API first
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        toast.success('Đã sao chép vào clipboard!');
+      } else {
+        // Fallback for older browsers or non-secure contexts
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+          document.execCommand('copy');
+          toast.success('Đã sao chép vào clipboard!');
+        } catch (err) {
+          toast.error('Không thể sao chép. Vui lòng copy thủ công.');
+        }
+        textArea.remove();
+      }
+    } catch (err) {
+      // Silent fallback for permission issues
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      textArea.style.top = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        toast.success('Đã sao chép vào clipboard!');
+      } catch (fallbackErr) {
+        toast.error('Không thể sao chép. Vui lòng copy thủ công.');
+      }
+      textArea.remove();
+    }
   };
 
   const deleteEmail = async (emailId) => {
