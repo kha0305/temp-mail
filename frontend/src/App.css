@@ -436,11 +436,11 @@ h1, h2, h3, h4, h5, h6 {
 .message-detail-section {
   flex: 1;
   overflow-y: auto;
-  padding: 1.5rem;
+  padding: 2rem;
 }
 
 .back-btn {
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .message-detail-card {
