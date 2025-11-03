@@ -5,6 +5,7 @@ import os
 from dotenv import load_dotenv
 from pathlib import Path
 import sys
+import pymysql
 
 # Load .env file
 ROOT_DIR = Path(__file__).parent
@@ -33,6 +34,36 @@ if not DB_PASSWORD:
     sys.exit(1)
 else:
     print(f"✅ DB credentials loaded - User: {DB_USER}, Database: {DB_NAME}")
+
+# Create database if not exists
+def create_database_if_not_exists():
+    """Create database if it doesn't exist"""
+    try:
+        # Connect to MySQL server without specifying database
+        connection = pymysql.connect(
+            host=DB_HOST,
+            port=int(DB_PORT),
+            user=DB_USER,
+            password=DB_PASSWORD
+        )
+        
+        with connection.cursor() as cursor:
+            # Create database if not exists
+            cursor.execute(f"CREATE DATABASE IF NOT EXISTS {DB_NAME} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci")
+            print(f"✅ Database '{DB_NAME}' is ready!")
+        
+        connection.commit()
+        connection.close()
+        return True
+        
+    except pymysql.Error as e:
+        print(f"❌ Error creating database: {e}")
+        return False
+
+# Create database before creating engine
+if not create_database_if_not_exists():
+    print("❌ Failed to create database. Please check MySQL connection.")
+    sys.exit(1)
 
 # URL encode password to handle special characters
 from urllib.parse import quote_plus
