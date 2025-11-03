@@ -124,7 +124,7 @@ brew services start mysql  # macOS
 ```bash
 # Tìm process đang dùng port
 lsof -i :8001  # Backend
-lsof -i :3000  # Frontend
+lsof -i :7050  # Frontend
 
 # Kill process
 kill -9 <PID>
