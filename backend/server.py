@@ -234,7 +234,7 @@ async def get_message_detail(email_id: str, message_id: str, db: Session = Depen
     return message
 
 @api_router.post("/emails/{email_id}/refresh")
-async def refresh_messages(email_id: int, db: Session = Depends(get_db)):
+async def refresh_messages(email_id: str, db: Session = Depends(get_db)):
     """Refresh messages for an email"""
     email = db.query(TempEmailModel).filter(TempEmailModel.id == email_id).first()
     if not email:
