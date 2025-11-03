@@ -212,7 +212,7 @@ infrastructure:
   - task: "Tạo documentation"
     implemented: true
     working: "NA"
-    file: "SETUP_GUIDE.md, README.md"
+    file: "SETUP_GUIDE.md, README.md, HUONG_DAN_LOCAL.md"
     stuck_count: 0
     priority: "medium"
     needs_retesting: false
@@ -235,6 +235,15 @@ infrastructure:
              - Tech stack
              - API endpoints
              - Development workflow
+          
+          3. HUONG_DAN_LOCAL.md (MỚI):
+             - Hướng dẫn chi tiết bằng tiếng Việt
+             - Yêu cầu hệ thống và cách cài đặt từng bước
+             - 2 cách chạy: Script tự động và thủ công
+             - Troubleshooting phổ biến
+             - API endpoints documentation
+             - Database schema
+             - Development tips
 
 metadata:
   created_by: "main_agent"
