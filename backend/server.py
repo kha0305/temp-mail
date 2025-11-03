@@ -32,13 +32,7 @@ MAILTM_BASE_URL = "https://api.mail.tm"
 
 # Models (Pydantic schemas for API)
 class TempEmailSchema(BaseModel):
-    model_config = ConfigDict(
-        extra="ignore", 
-        from_attributes=True,
-        json_encoders={
-            datetime: lambda v: v.isoformat() if v else None
-        }
-    )
+    model_config = ConfigDict(extra="ignore", from_attributes=True)
     
     id: str  # Changed from int to str for UUID
     address: str
@@ -49,12 +43,7 @@ class TempEmailSchema(BaseModel):
     message_count: int = 0
 
 class EmailMessage(BaseModel):
-    model_config = ConfigDict(
-        extra="ignore",
-        json_encoders={
-            datetime: lambda v: v.isoformat() if v else None
-        }
-    )
+    model_config = ConfigDict(extra="ignore")
     
     id: str
     email_id: str
@@ -70,12 +59,6 @@ class CreateEmailRequest(BaseModel):
     username: Optional[str] = None
 
 class CreateEmailResponse(BaseModel):
-    model_config = ConfigDict(
-        json_encoders={
-            datetime: lambda v: v.isoformat() if v else None
-        }
-    )
-    
     id: str  # Changed from int to str for UUID
     address: str
     created_at: datetime
