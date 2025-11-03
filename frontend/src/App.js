@@ -12,6 +12,7 @@ import {
   Mail, Copy, Trash2, RefreshCw, Sun, Moon, 
   Clock, Edit, Inbox, History
 } from 'lucide-react';
+import './App.css';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
