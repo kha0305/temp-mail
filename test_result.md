@@ -203,6 +203,14 @@ frontend:
           - Cập nhật manifest.json: theme_color từ #4F46E5 → #0891b2
           - Cập nhật index.html: meta theme-color từ #4F46E5 → #0891b2
           - Giữ nguyên App.css (đã có màu xanh lam từ trước)
+      - working: "NA"
+        agent: "main"
+        comment: |
+          ✅ Đã đơn giản hóa icon design:
+          - Thay đổi từ icon phức tạp (có clock, lightning, gradient) sang icon đơn giản
+          - Icon mới: Chỉ có envelope outline đơn giản với màu trắng trên nền xanh lam
+          - Tạo lại tất cả favicon và logo files với design mới
+          - Design giống với lucide-react Mail icon để đồng nhất với UI
 
   - task: "Sửa lỗi state management và auto-refresh"
     implemented: true
