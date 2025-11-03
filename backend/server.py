@@ -207,20 +207,18 @@ async def get_email(email_id: str, db: Session = Depends(get_db)):
     return email.to_dict()
 
 @api_router.get("/emails/{email_id}/messages")
-async def get_email_messages(email_id: str):
+async def get_email_messages(email_id: str, db: Session = Depends(get_db)):
     """Get messages for an email"""
-    email = await db.temp_emails.find_one({"id": email_id}, {"_id": 0})
+    email = db.query(TempEmailModel).filter(TempEmailModel.id == email_id).first()
     if not email:
         raise HTTPException(status_code=404, detail="Email not found")
     
     # Get messages from Mail.tm
-    messages = await get_mailtm_messages(email["token"])
+    messages = await get_mailtm_messages(email.token)
     
     # Update message count
-    await db.temp_emails.update_one(
-        {"id": email_id},
-        {"$set": {"message_count": len(messages)}}
-    )
+    email.message_count = len(messages)
+    db.commit()
     
     return {"messages": messages, "count": len(messages)}
 
