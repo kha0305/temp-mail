@@ -197,7 +197,7 @@ async def get_emails(db: Session = Depends(get_db)):
     return emails
 
 @api_router.get("/emails/{email_id}")
-async def get_email(email_id: str, db: Session = Depends(get_db)):
+async def get_email(email_id: int, db: Session = Depends(get_db)):
     """Get email by ID"""
     email = db.query(TempEmailModel).filter(TempEmailModel.id == email_id).first()
     if not email:
