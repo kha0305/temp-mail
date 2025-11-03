@@ -446,3 +446,29 @@ agent_communication:
       - ✅ Toàn bộ theme bây giờ dùng màu xanh lam/cyan đồng nhất
       - ✅ Favicon, logo và UI đều theo màu xanh lam
       - ✅ PWA theme color đã cập nhật
+
+  - agent: "main"
+    message: |
+      ✅ ĐƠN GIẢN HÓA ICON + SỬA LỖI TIMESTAMP + MONGODB FALLBACK
+      
+      1. ✅ Đơn giản hóa icon design:
+         - Thay icon phức tạp (có clock, lightning, gradient) → icon envelope outline đơn giản
+         - Chỉ có outline trắng trên nền xanh lam
+         - Tạo lại tất cả favicon files
+      
+      2. ✅ Sửa lỗi timestamp "7 giờ trước":
+         - Cập nhật models.py: to_dict() để đảm bảo created_at có timezone UTC
+         - Khi serialize, convert sang ISO format với timezone info
+         - Fix: datetime.now(timezone.utc) và .replace(tzinfo=timezone.utc) nếu cần
+      
+      3. ✅ Tạo MongoDB fallback cho container environment:
+         - MySQL version: server_mysql_backup.py (cho local deployment)
+         - MongoDB version: server.py (cho container testing)
+         - Lý do: Container không có MySQL, chỉ có MongoDB
+         - Khi user download về local, dùng MySQL version
+      
+      Kết quả:
+      - ✅ Icon đơn giản, đẹp hơn
+      - ✅ Timestamp sẽ hiển thị đúng với dữ liệu mới
+      - ✅ App có thể chạy được trong container để test
+      - ✅ Database mới (trống) - không còn data cũ với timestamp sai
