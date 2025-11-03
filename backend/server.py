@@ -191,15 +191,10 @@ async def create_email(request: CreateEmailRequest, db: Session = Depends(get_db
         logging.error(f"Error creating email: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
-@api_router.get("/emails", response_model=List[TempEmail])
-async def get_emails():
+@api_router.get("/emails", response_model=List[TempEmailSchema])
+async def get_emails(db: Session = Depends(get_db)):
     """Get all temporary emails"""
-    emails = await db.temp_emails.find({}, {"_id": 0}).to_list(1000)
-    
-    for email in emails:
-        if isinstance(email['created_at'], str):
-            email['created_at'] = datetime.fromisoformat(email['created_at'])
-    
+    emails = db.query(TempEmailModel).all()
     return emails
 
 @api_router.get("/emails/{email_id}")
