@@ -221,7 +221,7 @@ async def get_email_messages(email_id: str, db: Session = Depends(get_db)):
     return {"messages": messages, "count": len(messages)}
 
 @api_router.get("/emails/{email_id}/messages/{message_id}")
-async def get_message_detail(email_id: int, message_id: str, db: Session = Depends(get_db)):
+async def get_message_detail(email_id: str, message_id: str, db: Session = Depends(get_db)):
     """Get message detail"""
     email = db.query(TempEmailModel).filter(TempEmailModel.id == email_id).first()
     if not email:
