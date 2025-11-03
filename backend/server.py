@@ -1,7 +1,7 @@
-from fastapi import FastAPI, APIRouter, HTTPException
+from fastapi import FastAPI, APIRouter, HTTPException, Depends
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
-from motor.motor_asyncio import AsyncIOMotorClient
+from sqlalchemy.orm import Session
 import os
 import logging
 from pathlib import Path
@@ -13,13 +13,14 @@ import httpx
 import random
 import string
 
+from database import engine, get_db, Base
+from models import TempEmail as TempEmailModel
+
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# MongoDB connection
-mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+# Create database tables
+Base.metadata.create_all(bind=engine)
 
 # Create the main app without a prefix
 app = FastAPI()
