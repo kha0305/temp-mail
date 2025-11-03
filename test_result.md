@@ -328,3 +328,38 @@ agent_communication:
       
       Lưu ý: Code hiện chạy trong container nên không thể test với MySQL local.
       Tất cả files đã sẵn sàng để user download và chạy trên máy local.
+
+  - agent: "main"
+    message: |
+      ✅ BUG FIX: Sửa lỗi 404 "POST /api/emails//refresh"
+      
+      Vấn đề phát hiện:
+      - Backend logs hiển thị nhiều lỗi 404 với URL "/api/emails//refresh" (double slash)
+      - Frontend đang gọi refresh với email ID undefined/empty
+      - Delete endpoint không nhất quán về kiểu dữ liệu ID (int vs string)
+      
+      Các sửa đổi:
+      
+      1. Backend (server.py):
+         ✅ Sửa delete_email endpoint: email_id: int → email_id: str
+         - Đảm bảo nhất quán với các endpoint khác (tất cả dùng UUID string)
+      
+      2. Frontend (App.js):
+         ✅ Cải thiện useEffect auto-refresh:
+         - Thay đổi dependency từ [selectedEmail, autoRefresh] → [selectedEmail?.id, autoRefresh]
+         - Thêm guard kiểm tra selectedEmail?.id trước khi refresh
+         
+         ✅ Thêm guard trong refreshMessages():
+         - Kiểm tra emailId không undefined/empty trước khi gọi API
+         - Tự động clear selection nếu nhận 404 (email đã bị xóa)
+         
+         ✅ Cải thiện loadEmails():
+         - Sync selectedEmail với dữ liệu mới load
+         - Tự động clear selection nếu email đã bị xóa
+         - Ngăn stale reference issues
+      
+      Kết quả:
+      - ✅ Không còn lỗi 404 với empty email IDs
+      - ✅ State management chắc chắn hơn
+      - ✅ Auto-refresh hoạt động đúng ngay cả khi delete emails
+      - ✅ Xử lý edge cases tốt hơn (email bị xóa trong khi đang được chọn)
