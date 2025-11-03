@@ -472,3 +472,36 @@ agent_communication:
       - ✅ Timestamp sẽ hiển thị đúng với dữ liệu mới
       - ✅ App có thể chạy được trong container để test
       - ✅ Database mới (trống) - không còn data cũ với timestamp sai
+
+  - agent: "main"
+    message: |
+      ✅ THÊM LINK STYLING + TỐI ƯU HIỆU NĂNG
+      
+      1. ✅ Styling cho links trong email:
+         - Thêm màu xanh lam (#0891b2) và gạch dưới cho tất cả links
+         - Hover effect với màu xanh nhạt hơn (#06b6d4)
+         - Áp dụng cho cả .html-content và .text-content
+      
+      2. ✅ Tối ưu hiệu năng backend:
+         - Giảm timeout httpx từ 30s → 10s cho tất cả API calls
+         - Áp dụng cho: get_available_domains, create_mailtm_account, 
+           get_mailtm_token, get_mailtm_messages, get_mailtm_message_detail
+         - Giảm delay khi gọi Mail.tm API
+      
+      3. ✅ Cải thiện UX nút "Làm mới":
+         - Thêm state 'refreshing' để track loading
+         - Disable button khi đang refresh
+         - Icon quay (spinning animation) khi đang tải
+         - Text thay đổi: "Làm mới" → "Đang tải..."
+         - Thêm toast error message khi refresh thất bại
+      
+      Files thay đổi:
+      - backend/server.py: Giảm timeout xuống 10s
+      - frontend/src/App.js: Thêm refreshing state và loading UI
+      - frontend/src/App.css: Thêm @keyframes spin và .animate-spin class
+      
+      Kết quả:
+      - ✅ Links trong email có màu xanh và gạch dưới
+      - ✅ Giảm delay từ ~30s xuống ~10s tối đa
+      - ✅ UX tốt hơn với visual feedback khi refresh
+      - ✅ Users biết được khi nào đang loading
