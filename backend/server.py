@@ -31,16 +31,16 @@ api_router = APIRouter(prefix="/api")
 # Mail.tm Configuration
 MAILTM_BASE_URL = "https://api.mail.tm"
 
-# Models
-class TempEmail(BaseModel):
-    model_config = ConfigDict(extra="ignore")
+# Models (Pydantic schemas for API)
+class TempEmailSchema(BaseModel):
+    model_config = ConfigDict(extra="ignore", from_attributes=True)
     
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    id: str
     address: str
     password: str
     token: str
     account_id: str
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime
     message_count: int = 0
 
 class EmailMessage(BaseModel):
