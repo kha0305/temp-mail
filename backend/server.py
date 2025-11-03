@@ -7,7 +7,6 @@ import logging
 from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional
-import uuid
 from datetime import datetime, timezone
 import httpx
 import random
