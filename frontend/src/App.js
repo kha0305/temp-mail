@@ -250,7 +250,7 @@ function App() {
           {/* Sidebar - Email List */}
           <aside className="sidebar">
             <div className="sidebar-header">
-              <h2 className="sidebar-title">Email tạm thời</h2>
+              <h2 className="sidebar-title">TempMail</h2>
               <Button
                 onClick={createEmail}
                 disabled={loading}
