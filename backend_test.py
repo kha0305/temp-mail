@@ -4,7 +4,7 @@ import time
 from datetime import datetime
 
 class TempMailAPITester:
-    def __init__(self, base_url="https://study-tempmail.preview.emergentagent.com"):
+    def __init__(self, base_url="https://local-mysql-runner.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.tests_run = 0
