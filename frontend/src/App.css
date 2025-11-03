@@ -522,6 +522,16 @@ h1, h2, h3, h4, h5, h6 {
   font-family: 'Inter', monospace;
 }
 
+.text-content a {
+  color: #0891b2;
+  text-decoration: underline;
+}
+
+.text-content a:hover {
+  color: #06b6d4;
+  text-decoration: underline;
+}
+
 .no-content {
   color: var(--text-muted);
   text-align: center;
