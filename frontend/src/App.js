@@ -73,7 +73,21 @@ function App() {
   const loadEmails = async () => {
     try {
       const response = await axios.get(`${API}/emails`);
-      setEmails(response.data);
+      const loadedEmails = response.data;
+      setEmails(loadedEmails);
+      
+      // If an email is selected, sync it with the loaded data
+      if (selectedEmail?.id) {
+        const updatedEmail = loadedEmails.find(e => e.id === selectedEmail.id);
+        if (updatedEmail) {
+          setSelectedEmail(updatedEmail);
+        } else {
+          // Email was deleted, clear selection
+          setSelectedEmail(null);
+          setMessages([]);
+          setSelectedMessage(null);
+        }
+      }
     } catch (error) {
       console.error('Error loading emails:', error);
     }
