@@ -1,25 +1,24 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends
+from fastapi import FastAPI, APIRouter, HTTPException
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
 import os
 import logging
 from pathlib import Path
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict
 from typing import List, Optional
 from datetime import datetime, timezone
 import httpx
 import random
 import string
-
-from database import engine, get_db, Base
-from models import TempEmail as TempEmailModel
+from motor.motor_asyncio import AsyncIOMotorClient
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# Create database tables
-Base.metadata.create_all(bind=engine)
+# MongoDB Configuration
+MONGO_URL = os.environ.get('MONGO_URL', 'mongodb://localhost:27017/temp_mail')
+client = AsyncIOMotorClient(MONGO_URL)
+db = client.get_database()
 
 # Create the main app without a prefix
 app = FastAPI()
@@ -32,9 +31,9 @@ MAILTM_BASE_URL = "https://api.mail.tm"
 
 # Models (Pydantic schemas for API)
 class TempEmailSchema(BaseModel):
-    model_config = ConfigDict(extra="ignore", from_attributes=True)
+    model_config = ConfigDict(extra="ignore")
     
-    id: str  # Changed from int to str for UUID
+    id: str
     address: str
     password: str
     token: str
@@ -59,7 +58,7 @@ class CreateEmailRequest(BaseModel):
     username: Optional[str] = None
 
 class CreateEmailResponse(BaseModel):
-    id: str  # Changed from int to str for UUID
+    id: str
     address: str
     created_at: datetime
 
@@ -117,7 +116,8 @@ async def get_mailtm_messages(token: str):
             )
             response.raise_for_status()
             data = response.json()
-            return data.get("hydra:member", [])
+            messages = data.get("hydra:member", [])
+            return messages
         except Exception as e:
             logging.error(f"Error getting messages: {e}")
             return []
@@ -142,7 +142,7 @@ async def root():
     return {"message": "TempMail API"}
 
 @api_router.post("/emails/create", response_model=CreateEmailResponse)
-async def create_email(request: CreateEmailRequest, db: Session = Depends(get_db)):
+async def create_email(request: CreateEmailRequest):
     """Create a new temporary email"""
     try:
         # Get available domain
@@ -165,99 +165,103 @@ async def create_email(request: CreateEmailRequest, db: Session = Depends(get_db
         # Get authentication token
         token = await get_mailtm_token(address, password)
         
-        # Save to database (id will be auto-generated)
-        email_doc = TempEmailModel(
-            address=address,
-            password=password,
-            token=token,
-            account_id=account_data["id"],
-            created_at=datetime.now(timezone.utc),
-            message_count=0
-        )
+        # Save to MongoDB
+        email_doc = {
+            "address": address,
+            "password": password,
+            "token": token,
+            "account_id": account_data["id"],
+            "created_at": datetime.now(timezone.utc),
+            "message_count": 0
+        }
         
-        db.add(email_doc)
-        db.commit()
-        db.refresh(email_doc)
+        result = await db.emails.insert_one(email_doc)
+        email_doc["id"] = str(result.inserted_id)
         
         return CreateEmailResponse(
-            id=email_doc.id,
-            address=email_doc.address,
-            created_at=email_doc.created_at
+            id=email_doc["id"],
+            address=email_doc["address"],
+            created_at=email_doc["created_at"]
         )
     except Exception as e:
-        db.rollback()
         logging.error(f"Error creating email: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
 @api_router.get("/emails", response_model=List[TempEmailSchema])
-async def get_emails(db: Session = Depends(get_db)):
+async def get_emails():
     """Get all temporary emails"""
-    emails = db.query(TempEmailModel).all()
+    emails = []
+    async for email in db.emails.find():
+        email["id"] = str(email["_id"])
+        del email["_id"]
+        emails.append(email)
     return emails
 
 @api_router.get("/emails/{email_id}")
-async def get_email(email_id: str, db: Session = Depends(get_db)):
+async def get_email(email_id: str):
     """Get email by ID"""
-    email = db.query(TempEmailModel).filter(TempEmailModel.id == email_id).first()
-    if not email:
+    from bson import ObjectId
+    try:
+        email = await db.emails.find_one({"_id": ObjectId(email_id)})
+        if not email:
+            raise HTTPException(status_code=404, detail="Email not found")
+        
+        email["id"] = str(email["_id"])
+        del email["_id"]
+        return email
+    except Exception as e:
         raise HTTPException(status_code=404, detail="Email not found")
-    
-    return email.to_dict()
-
-@api_router.get("/emails/{email_id}/messages")
-async def get_email_messages(email_id: str, db: Session = Depends(get_db)):
-    """Get messages for an email"""
-    email = db.query(TempEmailModel).filter(TempEmailModel.id == email_id).first()
-    if not email:
-        raise HTTPException(status_code=404, detail="Email not found")
-    
-    # Get messages from Mail.tm
-    messages = await get_mailtm_messages(email.token)
-    
-    # Update message count
-    email.message_count = len(messages)
-    db.commit()
-    
-    return {"messages": messages, "count": len(messages)}
-
-@api_router.get("/emails/{email_id}/messages/{message_id}")
-async def get_message_detail(email_id: str, message_id: str, db: Session = Depends(get_db)):
-    """Get message detail"""
-    email = db.query(TempEmailModel).filter(TempEmailModel.id == email_id).first()
-    if not email:
-        raise HTTPException(status_code=404, detail="Email not found")
-    
-    message = await get_mailtm_message_detail(email.token, message_id)
-    if not message:
-        raise HTTPException(status_code=404, detail="Message not found")
-    
-    return message
 
 @api_router.post("/emails/{email_id}/refresh")
-async def refresh_messages(email_id: str, db: Session = Depends(get_db)):
+async def refresh_messages(email_id: str):
     """Refresh messages for an email"""
-    email = db.query(TempEmailModel).filter(TempEmailModel.id == email_id).first()
-    if not email:
+    from bson import ObjectId
+    try:
+        email = await db.emails.find_one({"_id": ObjectId(email_id)})
+        if not email:
+            raise HTTPException(status_code=404, detail="Email not found")
+        
+        messages = await get_mailtm_messages(email["token"])
+        
+        await db.emails.update_one(
+            {"_id": ObjectId(email_id)},
+            {"$set": {"message_count": len(messages)}}
+        )
+        
+        return {"messages": messages, "count": len(messages)}
+    except Exception as e:
+        logging.error(f"Error refreshing messages: {e}")
         raise HTTPException(status_code=404, detail="Email not found")
-    
-    messages = await get_mailtm_messages(email.token)
-    
-    email.message_count = len(messages)
-    db.commit()
-    
-    return {"messages": messages, "count": len(messages)}
+
+@api_router.get("/emails/{email_id}/messages/{message_id}")
+async def get_message_detail(email_id: str, message_id: str):
+    """Get message detail"""
+    from bson import ObjectId
+    try:
+        email = await db.emails.find_one({"_id": ObjectId(email_id)})
+        if not email:
+            raise HTTPException(status_code=404, detail="Email not found")
+        
+        message = await get_mailtm_message_detail(email["token"], message_id)
+        if not message:
+            raise HTTPException(status_code=404, detail="Message not found")
+        
+        return message
+    except Exception as e:
+        raise HTTPException(status_code=404, detail="Message not found")
 
 @api_router.delete("/emails/{email_id}")
-async def delete_email(email_id: str, db: Session = Depends(get_db)):
+async def delete_email(email_id: str):
     """Delete a temporary email"""
-    email = db.query(TempEmailModel).filter(TempEmailModel.id == email_id).first()
-    if not email:
+    from bson import ObjectId
+    try:
+        result = await db.emails.delete_one({"_id": ObjectId(email_id)})
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Email not found")
+        
+        return {"status": "deleted"}
+    except Exception as e:
         raise HTTPException(status_code=404, detail="Email not found")
-    
-    db.delete(email)
-    db.commit()
-    
-    return {"status": "deleted"}
 
 # Include the router in the main app
 app.include_router(api_router)
