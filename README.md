@@ -45,7 +45,7 @@ Xem file [SETUP_GUIDE.md](./SETUP_GUIDE.md) để có hướng dẫn đầy đ�
 ## 🔗 URLs
 
 Sau khi khởi động:
-- **Frontend**: http://localhost:3000
+- **Frontend**: http://localhost:7050
 - **Backend API**: http://localhost:8001
 - **API Docs**: http://localhost:8001/docs
 
