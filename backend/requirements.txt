@@ -25,7 +25,8 @@ jq==1.10.0
 markdown-it-py==4.0.0
 mccabe==0.7.0
 mdurl==0.1.2
-motor==3.3.1
+SQLAlchemy==2.0.23
+pymysql==1.1.0
 mypy==1.18.2
 mypy_extensions==1.1.0
 numpy==2.3.4
