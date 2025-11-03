@@ -52,6 +52,7 @@ function App() {
   const [messages, setMessages] = useState([]);
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
 
   useEffect(() => {
