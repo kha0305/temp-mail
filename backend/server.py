@@ -206,7 +206,7 @@ async def get_email(email_id: int, db: Session = Depends(get_db)):
     return email.to_dict()
 
 @api_router.get("/emails/{email_id}/messages")
-async def get_email_messages(email_id: str, db: Session = Depends(get_db)):
+async def get_email_messages(email_id: int, db: Session = Depends(get_db)):
     """Get messages for an email"""
     email = db.query(TempEmailModel).filter(TempEmailModel.id == email_id).first()
     if not email:
