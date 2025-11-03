@@ -1,27 +1,26 @@
-import { useState, useEffect } from 'react';
-import '@/App.css';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { ThemeProvider } from 'next-themes';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Toaster } from '@/components/ui/sonner';
 import { 
-  Mail, Plus, Copy, Trash2, RefreshCw, Sun, Moon, 
-  Inbox, Clock, User, ChevronRight, CheckCircle 
+  Mail, Copy, Trash2, RefreshCw, Sun, Moon, 
+  Clock, Edit, Inbox, History
 } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 function ThemeToggle() {
-  const [theme, setTheme] = useState('light');
+  const [theme, setTheme] = useState('dark');
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') || 'light';
+    const savedTheme = localStorage.getItem('theme') || 'dark';
     setTheme(savedTheme);
     document.documentElement.classList.toggle('dark', savedTheme === 'dark');
   }, []);
@@ -35,11 +34,11 @@ function ThemeToggle() {
 
   return (
     <Button
-      variant="outline"
+      variant="ghost"
       size="icon"
       onClick={toggleTheme}
       className="theme-toggle"
-      data-testid="theme-toggle-btn"
+      aria-label="Toggle theme"
     >
       {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
     </Button>
@@ -47,66 +46,95 @@ function ThemeToggle() {
 }
 
 function App() {
-  const [emails, setEmails] = useState([]);
-  const [selectedEmail, setSelectedEmail] = useState(null);
+  const [currentEmail, setCurrentEmail] = useState(null);
+  const [historyEmails, setHistoryEmails] = useState([]);
   const [messages, setMessages] = useState([]);
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(600); // 10 minutes in seconds
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [activeTab, setActiveTab] = useState('current');
 
+  // Load emails on mount
   useEffect(() => {
     loadEmails();
   }, []);
 
+  // Timer countdown
   useEffect(() => {
-    if (selectedEmail?.id && autoRefresh) {
+    if (currentEmail && timeLeft > 0) {
+      const timer = setInterval(() => {
+        setTimeLeft(prev => {
+          if (prev <= 1) {
+            toast.warning('Email đã hết hạn!');
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [currentEmail, timeLeft]);
+
+  // Auto refresh messages
+  useEffect(() => {
+    if (currentEmail?.id && autoRefresh) {
       const interval = setInterval(() => {
-        // Double-check the ID is still valid before refreshing
-        if (selectedEmail?.id) {
-          refreshMessages(selectedEmail.id, false);
+        if (currentEmail?.id) {
+          refreshMessages(currentEmail.id, false);
         }
       }, 10000);
       return () => clearInterval(interval);
     }
-  }, [selectedEmail?.id, autoRefresh]);
+  }, [currentEmail?.id, autoRefresh]);
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const loadEmails = async () => {
     try {
       const response = await axios.get(`${API}/emails`);
-      const loadedEmails = response.data;
-      setEmails(loadedEmails);
+      const emails = response.data;
       
-      // If an email is selected, sync it with the loaded data
-      if (selectedEmail?.id) {
-        const updatedEmail = loadedEmails.find(e => e.id === selectedEmail.id);
-        if (updatedEmail) {
-          setSelectedEmail(updatedEmail);
-        } else {
-          // Email was deleted, clear selection
-          setSelectedEmail(null);
-          setMessages([]);
-          setSelectedMessage(null);
-        }
+      if (emails.length > 0) {
+        // Set the first email as current
+        const latest = emails[0];
+        setCurrentEmail(latest);
+        setHistoryEmails(emails.slice(1));
+        await refreshMessages(latest.id, false);
       }
     } catch (error) {
       console.error('Error loading emails:', error);
     }
   };
 
-  const createEmail = async () => {
+  const createNewEmail = async () => {
     setLoading(true);
     try {
       const response = await axios.post(`${API}/emails/create`, {});
-      toast.success('Email tạo thành công!', {
-        description: response.data.address
-      });
-      await loadEmails();
       const newEmail = response.data;
-      setSelectedEmail(newEmail);
-      await refreshMessages(newEmail.id);
+      
+      // Move current email to history if exists
+      if (currentEmail) {
+        setHistoryEmails(prev => [currentEmail, ...prev]);
+      }
+      
+      setCurrentEmail(newEmail);
+      setMessages([]);
+      setSelectedMessage(null);
+      setTimeLeft(600); // Reset timer to 10 minutes
+      
+      toast.success('Email mới đã được tạo!', {
+        description: newEmail.address
+      });
+      
+      await refreshMessages(newEmail.id, false);
     } catch (error) {
-      toast.error('Không thể tạo email', {
+      toast.error('Không thể tạo email mới', {
         description: error.response?.data?.detail || 'Lỗi không xác định'
       });
     } finally {
@@ -114,16 +142,42 @@ function App() {
     }
   };
 
-  const selectEmail = async (email) => {
-    setSelectedEmail(email);
-    setSelectedMessage(null);
-    await refreshMessages(email.id);
+  const deleteCurrentEmail = async () => {
+    if (!currentEmail) return;
+    
+    setLoading(true);
+    try {
+      await axios.delete(`${API}/emails/${currentEmail.id}`);
+      
+      toast.success('Email đã được xóa');
+      
+      // Load next email from history or create new
+      if (historyEmails.length > 0) {
+        const nextEmail = historyEmails[0];
+        setCurrentEmail(nextEmail);
+        setHistoryEmails(prev => prev.slice(1));
+        await refreshMessages(nextEmail.id, false);
+        setTimeLeft(600);
+      } else {
+        setCurrentEmail(null);
+        setMessages([]);
+        setSelectedMessage(null);
+      }
+    } catch (error) {
+      toast.error('Không thể xóa email');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addTime = () => {
+    setTimeLeft(prev => prev + 600); // Add 10 more minutes
+    toast.success('Đã thêm 10 phút');
   };
 
   const refreshMessages = async (emailId, showToast = true) => {
-    // Guard against undefined or empty email IDs
     if (!emailId || emailId.trim() === '') {
-      console.warn('Attempted to refresh messages with invalid email ID:', emailId);
+      console.warn('Invalid email ID');
       return;
     }
     
@@ -136,9 +190,8 @@ function App() {
       }
     } catch (error) {
       console.error('Error refreshing messages:', error);
-      // If email not found, clear the selection
       if (error.response?.status === 404) {
-        setSelectedEmail(null);
+        setCurrentEmail(null);
         setMessages([]);
       }
       if (showToast) {
@@ -150,326 +203,298 @@ function App() {
   };
 
   const selectMessage = async (message) => {
-    if (!selectedEmail) return;
+    if (!currentEmail) return;
+    
     try {
       const response = await axios.get(
-        `${API}/emails/${selectedEmail.id}/messages/${message.id}`
+        `${API}/emails/${currentEmail.id}/messages/${message.id}`
       );
       setSelectedMessage(response.data);
     } catch (error) {
-      console.error('Error loading message:', error);
+      toast.error('Không thể tải chi tiết tin nhắn');
     }
   };
 
-  const copyToClipboard = async (text) => {
-    try {
-      // Try modern clipboard API first
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(text);
-        toast.success('Đã sao chép vào clipboard!');
-      } else {
-        // Fallback for older browsers or non-secure contexts
-        const textArea = document.createElement('textarea');
-        textArea.value = text;
-        textArea.style.position = 'fixed';
-        textArea.style.left = '-999999px';
-        textArea.style.top = '-999999px';
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-        try {
-          document.execCommand('copy');
-          toast.success('Đã sao chép vào clipboard!');
-        } catch (err) {
-          toast.error('Không thể sao chép. Vui lòng copy thủ công.');
-        }
-        textArea.remove();
-      }
-    } catch (err) {
-      // Silent fallback for permission issues
-      const textArea = document.createElement('textarea');
-      textArea.value = text;
-      textArea.style.position = 'fixed';
-      textArea.style.left = '-999999px';
-      textArea.style.top = '-999999px';
-      document.body.appendChild(textArea);
-      textArea.focus();
-      textArea.select();
-      try {
-        document.execCommand('copy');
-        toast.success('Đã sao chép vào clipboard!');
-      } catch (fallbackErr) {
-        toast.error('Không thể sao chép. Vui lòng copy thủ công.');
-      }
-      textArea.remove();
+  const switchToHistoryEmail = async (email) => {
+    // Move current to history
+    if (currentEmail) {
+      setHistoryEmails(prev => [currentEmail, ...prev.filter(e => e.id !== email.id)]);
     }
+    
+    // Set selected history email as current
+    setCurrentEmail(email);
+    setHistoryEmails(prev => prev.filter(e => e.id !== email.id));
+    setTimeLeft(600);
+    setMessages([]);
+    setSelectedMessage(null);
+    await refreshMessages(email.id, false);
+    setActiveTab('current');
   };
 
-  const deleteEmail = async (emailId) => {
-    try {
-      await axios.delete(`${API}/emails/${emailId}`);
-      toast.success('Đã xóa email');
-      await loadEmails();
-      if (selectedEmail?.id === emailId) {
-        setSelectedEmail(null);
-        setMessages([]);
-        setSelectedMessage(null);
-      }
-    } catch (error) {
-      toast.error('Không thể xóa email');
-    }
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    toast.success('Đã sao chép vào clipboard');
   };
 
-  const formatDate = (dateString) => {
+  const getTimeAgo = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
-    const diff = now - date;
-    const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(diff / 3600000);
-    const days = Math.floor(diff / 86400000);
-
-    if (minutes < 1) return 'Vừa xong';
-    if (minutes < 60) return `${minutes} phút trước`;
-    if (hours < 24) return `${hours} giờ trước`;
-    return `${days} ngày trước`;
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 1) return 'Vừa xong';
+    if (diffMins < 60) return `${diffMins} phút trước`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours} giờ trước`;
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays} ngày trước`;
   };
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="light">
-      <div className="app-container" data-testid="app-container">
+    <ThemeProvider attribute="class" defaultTheme="dark">
+      <div className="app-container">
         <Toaster position="top-right" />
         
         {/* Header */}
-        <header className="app-header">
-          <div className="header-content">
+        <header className="app-header-new">
+          <div className="header-content-new">
             <div className="logo-section">
-              <Mail className="logo-icon" />
+              <Mail className="h-8 w-8" />
               <h1 className="logo-text">TempMail</h1>
             </div>
-            <div className="header-actions">
-              <ThemeToggle />
-            </div>
+            <ThemeToggle />
           </div>
         </header>
 
         {/* Main Content */}
-        <div className="main-content">
-          {/* Sidebar - Email List */}
-          <aside className="sidebar">
-            <div className="sidebar-header">
-              <h2 className="sidebar-title">Email tạm thời</h2>
-              <Button
-                onClick={createEmail}
-                disabled={loading}
-                size="sm"
-                className="create-email-btn"
-                data-testid="create-email-btn"
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                Tạo mới
-              </Button>
-            </div>
+        <main className="main-content-new">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="main-tabs">
+            <TabsList className="tabs-list-new">
+              <TabsTrigger value="current" className="tab-trigger-new">
+                <Inbox className="h-4 w-4 mr-2" />
+                Email hiện tại
+              </TabsTrigger>
+              <TabsTrigger value="history" className="tab-trigger-new">
+                <History className="h-4 w-4 mr-2" />
+                Lịch sử ({historyEmails.length})
+              </TabsTrigger>
+            </TabsList>
 
-            <ScrollArea className="email-list">
-              {emails.length === 0 ? (
-                <div className="empty-state">
-                  <Mail className="empty-icon" />
-                  <p>Chưa có email nào</p>
-                  <p className="empty-subtitle">Nhấn "Tạo mới" để bắt đầu</p>
-                </div>
-              ) : (
-                <div className="email-items">
-                  {emails.map((email) => (
-                    <Card
-                      key={email.id}
-                      className={`email-card ${selectedEmail?.id === email.id ? 'selected' : ''}`}
-                      onClick={() => selectEmail(email)}
-                      data-testid={`email-card-${email.id}`}
-                    >
-                      <CardContent className="email-card-content">
-                        <div className="email-info">
-                          <div className="email-address-row">
-                            <User className="h-4 w-4" />
-                            <span className="email-address">{email.address}</span>
-                          </div>
-                          <div className="email-meta">
-                            <Clock className="h-3 w-3" />
-                            <span>{formatDate(email.created_at)}</span>
-                            {email.message_count > 0 && (
-                              <span className="message-badge">
-                                {email.message_count}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <div className="email-actions">
+            {/* Current Email Tab */}
+            <TabsContent value="current" className="tab-content-new">
+              {currentEmail ? (
+                <>
+                  {/* Hero Section */}
+                  <div className="hero-section">
+                    <h2 className="hero-title">Địa chỉ email 10 phút của bạn</h2>
+                    <p className="hero-description">
+                      Với 10 Minute Mail, hãy tránh thư rác, giữ hộp thư của bạn sạch sẽ 
+                      và bảo vệ quyền riêng tư của bạn một cách dễ dàng.
+                    </p>
+
+                    {/* Email Display */}
+                    <div className="email-display-box">
+                      <div className="email-address-container">
+                        <span className="email-address">{currentEmail.address}</span>
+                        <div className="email-actions-inline">
+                          <span className={`timer ${timeLeft <= 60 ? 'timer-warning' : ''}`}>
+                            {formatTime(timeLeft)}
+                          </span>
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              copyToClipboard(email.address);
-                            }}
-                            data-testid={`copy-email-${email.id}`}
+                            onClick={() => copyToClipboard(currentEmail.address)}
+                            className="copy-btn-inline"
                           >
-                            <Copy className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              deleteEmail(email.id);
-                            }}
-                            data-testid={`delete-email-${email.id}`}
-                          >
-                            <Trash2 className="h-4 w-4" />
+                            <Copy className="h-5 w-5" />
                           </Button>
                         </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </ScrollArea>
-          </aside>
-
-          {/* Main Area - Messages */}
-          <main className="messages-area">
-            {!selectedEmail ? (
-              <div className="empty-state-large">
-                <Inbox className="empty-icon-large" />
-                <h3>Chọn một email để xem tin nhắn</h3>
-                <p>Tạo email mới hoặc chọn từ danh sách bên trái</p>
-              </div>
-            ) : (
-              <div className="messages-container">
-                {/* Email Info Header */}
-                <div className="email-info-header">
-                  <div className="email-details">
-                    <h2 className="email-title">{selectedEmail.address}</h2>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => copyToClipboard(selectedEmail.address)}
-                      data-testid="copy-selected-email"
-                    >
-                      <Copy className="h-4 w-4 mr-2" />
-                      Sao chép
-                    </Button>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => refreshMessages(selectedEmail.id)}
-                    disabled={refreshing}
-                    data-testid="refresh-messages-btn"
-                  >
-                    <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-                    {refreshing ? 'Đang tải...' : 'Làm mới'}
-                  </Button>
-                </div>
-
-                <Separator />
-
-                {/* Messages List */}
-                <div className="messages-content">
-                  {!selectedMessage ? (
-                    <div className="message-list-section">
-                      {messages.length === 0 ? (
-                        <div className="empty-messages">
-                          <Inbox className="empty-icon" />
-                          <p>Chưa có tin nhắn nào</p>
-                          <p className="empty-subtitle">Email sẽ xuất hiện ở đây khi có người gửi</p>
-                        </div>
-                      ) : (
-                        <ScrollArea className="message-scroll">
-                          {messages.map((message) => (
-                            <Card
-                              key={message.id}
-                              className="message-card"
-                              onClick={() => selectMessage(message)}
-                              data-testid={`message-card-${message.id}`}
-                            >
-                              <CardContent className="message-card-content">
-                                <div className="message-header">
-                                  <div className="message-from">
-                                    <User className="h-4 w-4" />
-                                    <span className="from-name">{message.from.name || message.from.address}</span>
-                                  </div>
-                                  <span className="message-time">{formatDate(message.createdAt)}</span>
-                                </div>
-                                <h3 className="message-subject">{message.subject}</h3>
-                                <p className="message-preview">{message.intro || 'Không có nội dung xem trước'}</p>
-                                <ChevronRight className="message-arrow" />
-                              </CardContent>
-                            </Card>
-                          ))}
-                        </ScrollArea>
-                      )}
+                      </div>
                     </div>
-                  ) : (
-                    <div className="message-detail-section">
+
+                    {/* Action Buttons */}
+                    <div className="action-buttons-group">
+                      <Button
+                        onClick={addTime}
+                        className="action-btn"
+                        variant="outline"
+                        disabled={timeLeft >= 1200}
+                      >
+                        <Clock className="h-5 w-5 mr-2" />
+                        Thêm 10 phút nữa
+                      </Button>
+                      <Button
+                        onClick={createNewEmail}
+                        className="action-btn"
+                        variant="outline"
+                        disabled={loading}
+                      >
+                        <Edit className="h-5 w-5 mr-2" />
+                        Thay đổi
+                      </Button>
+                      <Button
+                        onClick={deleteCurrentEmail}
+                        className="action-btn action-btn-danger"
+                        variant="outline"
+                        disabled={loading}
+                      >
+                        <Trash2 className="h-5 w-5 mr-2" />
+                        Xóa
+                      </Button>
+                    </div>
+                  </div>
+
+                  <Separator className="section-separator" />
+
+                  {/* Messages Section */}
+                  <div className="messages-section">
+                    <div className="messages-header">
+                      <h3 className="messages-title">Tin nhắn</h3>
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setSelectedMessage(null)}
-                        className="back-btn"
-                        data-testid="back-to-messages-btn"
+                        onClick={() => refreshMessages(currentEmail.id)}
+                        disabled={refreshing}
+                        className="refresh-btn-new"
                       >
-                        ← Quay lại
+                        <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+                        {refreshing ? 'Đang tải...' : 'Làm mới'}
                       </Button>
+                    </div>
 
-                      <Card className="message-detail-card">
-                        <CardHeader>
-                          <CardTitle className="message-detail-subject">{selectedMessage.subject}</CardTitle>
-                          <div className="message-detail-meta">
-                            <div className="meta-row">
-                              <strong>Từ:</strong>
-                              <span>{selectedMessage.from.name || selectedMessage.from.address}</span>
+                    {!selectedMessage ? (
+                      <div className="inbox-area">
+                        {messages.length === 0 ? (
+                          <div className="empty-state">
+                            <Mail className="empty-icon" />
+                            <h4 className="empty-title">Hộp thư của bạn trống</h4>
+                            <p className="empty-description">Đang chờ email đến</p>
+                          </div>
+                        ) : (
+                          <ScrollArea className="messages-list">
+                            {messages.map((msg) => (
+                              <Card
+                                key={msg.id}
+                                className="message-card"
+                                onClick={() => selectMessage(msg)}
+                              >
+                                <CardContent className="message-card-content">
+                                  <div className="message-info">
+                                    <h4 className="message-from">{msg.from?.name || msg.from?.address}</h4>
+                                    <p className="message-subject">{msg.subject}</p>
+                                    <span className="message-time">{getTimeAgo(msg.createdAt)}</span>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            ))}
+                          </ScrollArea>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="message-detail">
+                        <Button
+                          variant="ghost"
+                          onClick={() => setSelectedMessage(null)}
+                          className="back-btn"
+                        >
+                          ← Quay lại
+                        </Button>
+                        
+                        <Card className="detail-card">
+                          <CardContent className="detail-content">
+                            <div className="detail-header">
+                              <h3 className="detail-subject">{selectedMessage.subject}</h3>
+                              <div className="detail-meta">
+                                <div className="meta-row">
+                                  <span className="meta-label">Từ:</span>
+                                  <span className="meta-value">
+                                    {selectedMessage.from?.name} ({selectedMessage.from?.address})
+                                  </span>
+                                </div>
+                                <div className="meta-row">
+                                  <span className="meta-label">Ngày:</span>
+                                  <span className="meta-value">
+                                    {new Date(selectedMessage.createdAt).toLocaleString('vi-VN')}
+                                  </span>
+                                </div>
+                              </div>
                             </div>
-                            <div className="meta-row">
-                              <strong>Đến:</strong>
-                              <span>{selectedMessage.to?.[0]?.address}</span>
-                            </div>
-                            <div className="meta-row">
-                              <strong>Ngày:</strong>
-                              <span>{new Date(selectedMessage.createdAt).toLocaleString('vi-VN')}</span>
+
+                            <Separator className="detail-separator" />
+
+                            <Tabs defaultValue="html" className="message-tabs">
+                              <TabsList>
+                                <TabsTrigger value="html">HTML</TabsTrigger>
+                                <TabsTrigger value="text">Text</TabsTrigger>
+                              </TabsList>
+                              <TabsContent value="html" className="message-content">
+                                {selectedMessage.html && selectedMessage.html.length > 0 ? (
+                                  <div
+                                    className="html-content"
+                                    dangerouslySetInnerHTML={{ __html: selectedMessage.html[0] }}
+                                  />
+                                ) : (
+                                  <p className="no-content">Không có nội dung HTML</p>
+                                )}
+                              </TabsContent>
+                              <TabsContent value="text" className="message-content">
+                                {selectedMessage.text && selectedMessage.text.length > 0 ? (
+                                  <div className="text-content">{selectedMessage.text[0]}</div>
+                                ) : (
+                                  <p className="no-content">Không có nội dung text</p>
+                                )}
+                              </TabsContent>
+                            </Tabs>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div className="empty-state-main">
+                  <Mail className="empty-icon-large" />
+                  <h3 className="empty-title-large">Chưa có email nào</h3>
+                  <p className="empty-description-large">Tạo email mới để bắt đầu</p>
+                  <Button onClick={createNewEmail} disabled={loading} className="create-btn-large">
+                    <Mail className="h-5 w-5 mr-2" />
+                    Tạo email mới
+                  </Button>
+                </div>
+              )}
+            </TabsContent>
+
+            {/* History Tab */}
+            <TabsContent value="history" className="tab-content-new">
+              <div className="history-section">
+                <h2 className="history-title">Lịch sử email</h2>
+                {historyEmails.length === 0 ? (
+                  <div className="empty-state">
+                    <History className="empty-icon" />
+                    <h4 className="empty-title">Chưa có lịch sử</h4>
+                    <p className="empty-description">Các email cũ sẽ được lưu tại đây</p>
+                  </div>
+                ) : (
+                  <ScrollArea className="history-list">
+                    {historyEmails.map((email) => (
+                      <Card key={email.id} className="history-card" onClick={() => switchToHistoryEmail(email)}>
+                        <CardContent className="history-card-content">
+                          <div className="history-info">
+                            <Mail className="h-5 w-5 history-icon" />
+                            <div className="history-details">
+                              <p className="history-address">{email.address}</p>
+                              <span className="history-time">{getTimeAgo(email.created_at)}</span>
                             </div>
                           </div>
-                        </CardHeader>
-                        <CardContent>
-                          <Tabs defaultValue="html" className="message-tabs">
-                            <TabsList>
-                              <TabsTrigger value="html" data-testid="html-tab">HTML</TabsTrigger>
-                              <TabsTrigger value="text" data-testid="text-tab">Text</TabsTrigger>
-                            </TabsList>
-                            <TabsContent value="html" className="message-content">
-                              {selectedMessage.html && selectedMessage.html.length > 0 ? (
-                                <div
-                                  className="html-content"
-                                  dangerouslySetInnerHTML={{ __html: selectedMessage.html[0] }}
-                                  data-testid="message-html-content"
-                                />
-                              ) : (
-                                <p className="no-content">Không có nội dung HTML</p>
-                              )}
-                            </TabsContent>
-                            <TabsContent value="text" className="message-content">
-                              <pre className="text-content" data-testid="message-text-content">
-                                {selectedMessage.text || 'Không có nội dung text'}
-                              </pre>
-                            </TabsContent>
-                          </Tabs>
                         </CardContent>
                       </Card>
-                    </div>
-                  )}
-                </div>
+                    ))}
+                  </ScrollArea>
+                )}
               </div>
-            )}
-          </main>
-        </div>
+            </TabsContent>
+          </Tabs>
+        </main>
       </div>
     </ThemeProvider>
   );
