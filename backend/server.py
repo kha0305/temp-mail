@@ -60,7 +60,7 @@ class CreateEmailRequest(BaseModel):
     username: Optional[str] = None
 
 class CreateEmailResponse(BaseModel):
-    id: str
+    id: int
     address: str
     created_at: datetime
 
