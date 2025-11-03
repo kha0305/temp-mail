@@ -143,7 +143,7 @@ async def root():
     return {"message": "TempMail API"}
 
 @api_router.post("/emails/create", response_model=CreateEmailResponse)
-async def create_email(request: CreateEmailRequest):
+async def create_email(request: CreateEmailRequest, db: Session = Depends(get_db)):
     """Create a new temporary email"""
     try:
         # Get available domain
@@ -167,16 +167,19 @@ async def create_email(request: CreateEmailRequest):
         token = await get_mailtm_token(address, password)
         
         # Save to database
-        email_doc = TempEmail(
+        email_doc = TempEmailModel(
+            id=str(uuid.uuid4()),
             address=address,
             password=password,
             token=token,
-            account_id=account_data["id"]
+            account_id=account_data["id"],
+            created_at=datetime.now(timezone.utc),
+            message_count=0
         )
         
-        doc = email_doc.model_dump()
-        doc['created_at'] = doc['created_at'].isoformat()
-        await db.temp_emails.insert_one(doc)
+        db.add(email_doc)
+        db.commit()
+        db.refresh(email_doc)
         
         return CreateEmailResponse(
             id=email_doc.id,
@@ -184,6 +187,7 @@ async def create_email(request: CreateEmailRequest):
             created_at=email_doc.created_at
         )
     except Exception as e:
+        db.rollback()
         logging.error(f"Error creating email: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
