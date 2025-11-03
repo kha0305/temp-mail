@@ -143,6 +143,21 @@ backend:
           - Kiểm tra kết nối MySQL
           - Hiển thị thông báo lỗi chi tiết nếu có vấn đề
 
+  - task: "Sửa lỗi 404 empty email ID trong refresh endpoint"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: |
+          ✅ Sửa lỗi backend:
+          - Delete endpoint: email_id: int → email_id: str để nhất quán với UUID
+          - Đảm bảo tất cả endpoints dùng cùng kiểu dữ liệu cho ID
+
 frontend:
   - task: "Cập nhật cấu hình để kết nối backend local"
     implemented: true
