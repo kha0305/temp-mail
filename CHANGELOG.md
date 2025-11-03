@@ -109,7 +109,7 @@
 
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
-| id | VARCHAR(36) | PRIMARY KEY | UUID |
+| id | INT | PRIMARY KEY, AUTO_INCREMENT | ID tự tăng |
 | address | VARCHAR(255) | UNIQUE, NOT NULL | Email address |
 | password | VARCHAR(255) | NOT NULL | Password |
 | token | TEXT | NOT NULL | Auth token |
@@ -118,7 +118,7 @@
 | message_count | INT | DEFAULT 0 | Number of messages |
 
 **Indexes:**
-- PRIMARY KEY: `id`
+- PRIMARY KEY: `id` (AUTO_INCREMENT)
 - UNIQUE INDEX: `address`
 
 ---
