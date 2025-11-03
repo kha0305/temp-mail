@@ -405,3 +405,36 @@ agent_communication:
       - ✅ State management chắc chắn hơn
       - ✅ Auto-refresh hoạt động đúng ngay cả khi delete emails
       - ✅ Xử lý edge cases tốt hơn (email bị xóa trong khi đang được chọn)
+
+  - agent: "main"
+    message: |
+      ✅ THAY ĐỔI MÀU THEME: TÍM → XANH LAM (Cyan/Teal)
+      
+      Theo yêu cầu user: "đổi kiểu 2 thành kiểu 1"
+      - Kiểu 2 (cũ): Màu tím gradient (#4F46E5 → #7C3AED)
+      - Kiểu 1 (mới): Màu xanh lam gradient (#0891b2 → #06b6d4)
+      
+      Các thay đổi:
+      
+      1. ✅ mail-icon.svg:
+         - Gradient background: #4F46E5/#7C3AED → #0891b2/#06b6d4
+         - Clock circle: #4F46E5 → #0891b2
+         - Envelope flap: #E0E7FF → #cffafe (cyan light)
+      
+      2. ✅ Generated Icons:
+         - Tạo lại favicon.ico (multi-size)
+         - Tạo lại logo192.png
+         - Tạo lại logo512.png
+      
+      3. ✅ Configuration Files:
+         - manifest.json: theme_color #4F46E5 → #0891b2
+         - index.html: meta theme-color #4F46E5 → #0891b2
+      
+      4. ℹ️ App.css:
+         - Đã có màu xanh lam từ trước (#0891b2)
+         - Không cần thay đổi
+      
+      Kết quả:
+      - ✅ Toàn bộ theme bây giờ dùng màu xanh lam/cyan đồng nhất
+      - ✅ Favicon, logo và UI đều theo màu xanh lam
+      - ✅ PWA theme color đã cập nhật
