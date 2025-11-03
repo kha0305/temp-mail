@@ -127,6 +127,7 @@ function App() {
       return;
     }
     
+    setRefreshing(true);
     try {
       const response = await axios.post(`${API}/emails/${emailId}/refresh`);
       setMessages(response.data.messages);
@@ -140,6 +141,11 @@ function App() {
         setSelectedEmail(null);
         setMessages([]);
       }
+      if (showToast) {
+        toast.error('Không thể làm mới tin nhắn');
+      }
+    } finally {
+      setRefreshing(false);
     }
   };
 
