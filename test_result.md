@@ -102,7 +102,10 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Chuyển đổi ứng dụng TempMail từ MongoDB sang MySQL và setup để chạy hoàn toàn trên local"
+user_problem_statement: |
+  1. Chuyển đổi ứng dụng TempMail từ MongoDB sang MySQL và setup để chạy hoàn toàn trên local
+  2. Thêm tính năng: Khi hết 10 phút → chuyển email cũ vào lịch sử và tự động tạo email mới
+  3. Khi thêm thời gian → làm mới về 10 phút (không cộng dồn)
 
 backend:
   - task: "Chuyển đổi database từ MongoDB sang MySQL"
