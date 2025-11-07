@@ -40,6 +40,20 @@ class TempEmailSchema(BaseModel):
     token: str
     account_id: str
     created_at: datetime
+    expires_at: datetime  # NEW
+    message_count: int = 0
+
+
+class EmailHistorySchema(BaseModel):
+    model_config = ConfigDict(extra="ignore", from_attributes=True)
+    
+    id: str
+    address: str
+    password: str
+    token: str
+    account_id: str
+    created_at: datetime
+    expired_at: datetime
     message_count: int = 0
 
 class EmailMessage(BaseModel):
