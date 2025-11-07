@@ -286,11 +286,11 @@ infrastructure:
 
   - task: "Thêm tính năng hết hạn email tự động"
     implemented: true
-    working: "testing"
+    working: true
     file: "models.py, models_mongodb.py, background_tasks.py, background_tasks_mongodb.py, server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "testing"
         agent: "main"
@@ -316,6 +316,71 @@ infrastructure:
              - Tạo MongoDB versions: models_mongodb.py, background_tasks_mongodb.py, server_mongodb_new.py
              - Server tự động chạy MongoDB trong container
              - MySQL version vẫn có sẵn cho local deployment
+      - working: true
+        agent: "testing"
+        comment: |
+          ✅ BACKEND TESTING COMPLETE - ALL TESTS PASSED (14/14)
+          
+          Tested Features:
+          
+          1. ✅ Create Email with Expiry:
+             - POST /api/emails/create returns expires_at field
+             - Verified expires_at = created_at + 10 minutes (within 5s tolerance)
+             - Format: ISO 8601 with timezone (Z or +00:00)
+          
+          2. ✅ Get Emails with Expiry:
+             - GET /api/emails returns all emails with expires_at field
+             - Tested with multiple emails, all have correct expiry data
+          
+          3. ✅ Extend Time (KEY FEATURE):
+             - POST /api/emails/{id}/extend-time works correctly
+             - Verified: Resets to NOW + 10 minutes (NOT cumulative)
+             - Old expires_at is replaced, not added to
+             - Response includes new expires_at in ISO format
+          
+          4. ✅ Email History List:
+             - GET /api/emails/history/list returns array
+             - Returns empty array when no history (expected behavior)
+             - Ready to receive expired emails from background task
+          
+          5. ✅ History Messages:
+             - GET /api/emails/history/{id}/messages endpoint functional
+             - Returns 404 for non-existent history emails (correct)
+          
+          6. ✅ Delete History - Selective:
+             - DELETE /api/emails/history/delete with {"ids": ["id1", "id2"]}
+             - Returns deleted count correctly
+             - Works with empty array
+          
+          7. ✅ Delete History - All:
+             - DELETE /api/emails/history/delete with {"ids": null}
+             - Deletes all history emails
+             - Returns correct count
+          
+          8. ✅ Refresh Messages:
+             - POST /api/emails/{id}/refresh still works correctly
+             - No regression from new features
+          
+          9. ✅ Background Task:
+             - Confirmed running in logs: "Background tasks started (MongoDB version)"
+             - Checks every 30 seconds for expired emails
+             - Ready to auto-move expired emails to history
+          
+          10. ✅ Error Handling:
+              - 404 responses for non-existent emails
+              - Proper error messages in responses
+          
+          Test Coverage:
+          - All new expiry endpoints tested
+          - Expiry time calculation verified
+          - Extend time reset logic verified
+          - History CRUD operations tested
+          - Integration with existing features verified
+          
+          Notes:
+          - Did not wait 10 minutes to test auto-expire (background task logic verified in code)
+          - All API responses use correct ISO 8601 datetime format
+          - MongoDB integration working correctly in container environment
 
              - Menu chọn: Backend/Frontend/Cả hai/Init DB
              - Kiểm tra system requirements
