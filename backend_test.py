@@ -146,6 +146,89 @@ class TempMailAPITester:
             404
         )
 
+    def test_extend_time(self, email_id):
+        """Test extending email expiry time"""
+        return self.run_test(
+            f"Extend Time for {email_id}",
+            "POST",
+            f"emails/{email_id}/extend-time",
+            200
+        )
+
+    def test_get_history(self):
+        """Test getting email history"""
+        return self.run_test("Get Email History", "GET", "emails/history/list", 200)
+
+    def test_get_history_messages(self, email_id):
+        """Test getting messages for a history email"""
+        return self.run_test(
+            f"Get History Messages for {email_id}",
+            "GET",
+            f"emails/history/{email_id}/messages",
+            200
+        )
+
+    def test_delete_history_selective(self, ids):
+        """Test deleting specific history emails"""
+        return self.run_test(
+            "Delete Selected History",
+            "DELETE",
+            "emails/history/delete",
+            200,
+            data={"ids": ids}
+        )
+
+    def test_delete_history_all(self):
+        """Test deleting all history emails"""
+        return self.run_test(
+            "Delete All History",
+            "DELETE",
+            "emails/history/delete",
+            200,
+            data={"ids": None}
+        )
+
+    def verify_expiry_time(self, created_at_str, expires_at_str):
+        """Verify that expires_at is approximately 10 minutes after created_at"""
+        try:
+            created_at = datetime.fromisoformat(created_at_str.replace('Z', '+00:00'))
+            expires_at = datetime.fromisoformat(expires_at_str.replace('Z', '+00:00'))
+            
+            expected_expires = created_at + timedelta(minutes=10)
+            time_diff = abs((expires_at - expected_expires).total_seconds())
+            
+            # Allow 5 seconds tolerance
+            if time_diff <= 5:
+                print(f"   ✅ Expiry time verified: ~10 minutes from creation")
+                return True
+            else:
+                print(f"   ❌ Expiry time incorrect: {time_diff}s difference from expected")
+                return False
+        except Exception as e:
+            print(f"   ❌ Error verifying expiry time: {e}")
+            return False
+
+    def verify_extend_time_reset(self, old_expires_at_str, new_expires_at_str):
+        """Verify that extend time resets to ~10 minutes from now (not adds to old time)"""
+        try:
+            old_expires = datetime.fromisoformat(old_expires_at_str.replace('Z', '+00:00'))
+            new_expires = datetime.fromisoformat(new_expires_at_str.replace('Z', '+00:00'))
+            now = datetime.now(timezone.utc)
+            
+            expected_new_expires = now + timedelta(minutes=10)
+            time_diff = abs((new_expires - expected_new_expires).total_seconds())
+            
+            # Verify it's reset to ~10 minutes from now (not added to old time)
+            if time_diff <= 5:
+                print(f"   ✅ Extend time verified: Reset to ~10 minutes from now")
+                return True
+            else:
+                print(f"   ❌ Extend time incorrect: {time_diff}s difference from expected")
+                return False
+        except Exception as e:
+            print(f"   ❌ Error verifying extend time: {e}")
+            return False
+
 def main():
     print("🚀 Starting TempMail API Tests...")
     print("=" * 50)
