@@ -61,23 +61,35 @@ function App() {
   // Load emails on mount
   useEffect(() => {
     loadEmails();
+    loadHistory();
   }, []);
 
-  // Timer countdown
+  // Timer countdown - calculate from expires_at
   useEffect(() => {
-    if (currentEmail && timeLeft > 0) {
-      const timer = setInterval(() => {
-        setTimeLeft(prev => {
-          if (prev <= 1) {
-            toast.warning('Email đã hết hạn!');
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+    if (currentEmail && currentEmail.expires_at) {
+      const updateTimer = () => {
+        const now = new Date();
+        const expiresAt = new Date(currentEmail.expires_at);
+        const diffSeconds = Math.floor((expiresAt - now) / 1000);
+        
+        if (diffSeconds <= 0) {
+          setTimeLeft(0);
+          // Email expired, reload to get new email created by backend
+          toast.info('Email đã hết hạn, đang tải email mới...');
+          loadEmails();
+        } else {
+          setTimeLeft(diffSeconds);
+        }
+      };
+      
+      // Update immediately
+      updateTimer();
+      
+      // Update every second
+      const timer = setInterval(updateTimer, 1000);
       return () => clearInterval(timer);
     }
-  }, [currentEmail, timeLeft]);
+  }, [currentEmail]);
 
   // Auto refresh messages
   useEffect(() => {
