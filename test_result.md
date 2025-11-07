@@ -464,18 +464,23 @@ metadata:
     - "Extend time (reset to 10 minutes)"
 
 test_plan:
-  current_focus:
-    - "Thêm tính năng hết hạn email tự động"
-    - "Thêm UI cho lịch sử email với tính năng xóa"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
   note: |
-    Testing mới:
-    1. Backend: Test API endpoints mới (extend-time, history)
-    2. Backend: Kiểm tra background task (có thể cần đợi 30s)
-    3. Frontend: Test timer, extend time, history UI
-    4. Integration: Test flow hoàn chỉnh (create → wait → expire → history)
+    ✅ Testing Complete - Email Expiry Features
+    
+    Backend Testing Results:
+    - All 14 API tests passed
+    - Expiry time calculation verified (created_at + 10 minutes)
+    - Extend time reset logic verified (NOW + 10 minutes, not cumulative)
+    - History endpoints functional
+    - Background task running and monitoring expired emails
+    
+    Frontend Testing:
+    - Not tested (per system limitations)
+    - Backend APIs fully functional for frontend integration
 
 agent_communication:
   - agent: "main"
