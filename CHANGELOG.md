@@ -56,7 +56,7 @@
 - **`frontend/.env`**:
   ```env
   # Cũ:
-  REACT_APP_BACKEND_URL=https://blue-links.preview.emergentagent.com
+  REACT_APP_BACKEND_URL=https://email-cycle-system.preview.emergentagent.com
   
   # Mới:
   REACT_APP_BACKEND_URL=http://localhost:8001
