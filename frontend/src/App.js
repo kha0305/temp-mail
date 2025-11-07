@@ -89,16 +89,16 @@ function App() {
   // Timer countdown - calculate from expires_at
   useEffect(() => {
     if (currentEmail && currentEmail.expires_at) {
-      const updateTimer = () => {
+      const updateTimer = async () => {
         const now = new Date();
         const expiresAt = new Date(currentEmail.expires_at);
         const diffSeconds = Math.floor((expiresAt - now) / 1000);
         
         if (diffSeconds <= 0) {
           setTimeLeft(0);
-          // Email expired, reload to get new email created by backend
-          toast.info('Email đã hết hạn, đang tải email mới...');
-          loadEmails();
+          // Email expired, auto-create new email
+          toast.info('Email đã hết hạn, đang tạo email mới...');
+          await createNewEmail();
         } else {
           setTimeLeft(diffSeconds);
         }
