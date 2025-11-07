@@ -143,20 +143,16 @@ function App() {
       const response = await axios.post(`${API}/emails/create`, {});
       const newEmail = response.data;
       
-      // Move current email to history if exists
-      if (currentEmail) {
-        setHistoryEmails(prev => [currentEmail, ...prev]);
-      }
-      
       setCurrentEmail(newEmail);
       setMessages([]);
       setSelectedMessage(null);
-      setTimeLeft(600); // Reset timer to 10 minutes
       
       toast.success('Email mới đã được tạo!', {
         description: newEmail.address
       });
       
+      // Reload history in case old email was moved there
+      await loadHistory();
       await refreshMessages(newEmail.id, false);
     } catch (error) {
       toast.error('Không thể tạo email mới', {
