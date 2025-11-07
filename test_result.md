@@ -103,9 +103,18 @@
 #====================================================================================================
 
 user_problem_statement: |
-  1. Chuyển đổi ứng dụng TempMail từ MongoDB sang MySQL và setup để chạy hoàn toàn trên local
-  2. Thêm tính năng: Khi hết 10 phút → chuyển email cũ vào lịch sử và tự động tạo email mới
-  3. Khi thêm thời gian → làm mới về 10 phút (không cộng dồn)
+  UPDATE 2025-01-07:
+  1. ✅ Chuyển đổi ứng dụng TempMail từ MongoDB sang MySQL - HOÀN THÀNH
+  2. ✅ Khi hết 10 phút → chuyển email cũ vào lịch sử và tự động tạo email mới - HOÀN THÀNH
+  3. ✅ Khi thêm thời gian → làm mới về 10 phút (không cộng dồn) - HOÀN THÀNH
+  4. ✅ TỰ ĐỘNG TẠO EMAIL khi vào trang (không cần click nút) - HOÀN THÀNH
+  5. ✅ Bỏ MongoDB, chỉ dùng MySQL - HOÀN THÀNH
+  
+  Credentials MySQL user cung cấp:
+  - Username: root
+  - Password: 190705
+  - Database: temp_mail
+  - Port: 3306
 
 backend:
   - task: "Chuyển đổi database từ MongoDB sang MySQL"
