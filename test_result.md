@@ -258,6 +258,40 @@ infrastructure:
              - Chạy React app trên port 7050
           
           3. start_app.sh:
+
+  - task: "Thêm tính năng hết hạn email tự động"
+    implemented: true
+    working: "testing"
+    file: "models.py, models_mongodb.py, background_tasks.py, background_tasks_mongodb.py, server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "testing"
+        agent: "main"
+        comment: |
+          ✅ Backend - Tính năng hết hạn email:
+          1. Models:
+             - Thêm expires_at vào TempEmail (MySQL & MongoDB versions)
+             - Tạo EmailHistory model để lưu email đã hết hạn
+          
+          2. Background Tasks:
+             - Check expired emails mỗi 30 giây
+             - Tự động chuyển email hết hạn vào history
+             - Tự động tạo email mới khi không còn email active
+          
+          3. API Endpoints mới:
+             - POST /api/emails/{email_id}/extend-time: Reset về 10 phút
+             - GET /api/emails/history/list: Lấy danh sách history
+             - GET /api/emails/history/{email_id}/messages: Xem tin nhắn history
+             - GET /api/emails/history/{email_id}/messages/{message_id}: Chi tiết tin nhắn
+             - DELETE /api/emails/history/delete: Xóa history (có thể chọn IDs hoặc xóa tất cả)
+          
+          4. Container Environment:
+             - Tạo MongoDB versions: models_mongodb.py, background_tasks_mongodb.py, server_mongodb_new.py
+             - Server tự động chạy MongoDB trong container
+             - MySQL version vẫn có sẵn cho local deployment
+
              - Menu chọn: Backend/Frontend/Cả hai/Init DB
              - Kiểm tra system requirements
              - Hỗ trợ chạy song song
