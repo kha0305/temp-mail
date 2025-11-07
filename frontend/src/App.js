@@ -132,6 +132,8 @@ function App() {
   // Timer countdown - calculate from expires_at
   useEffect(() => {
     if (currentEmail && currentEmail.expires_at) {
+      let isCreatingNewEmail = false;
+      
       const updateTimer = async () => {
         const now = new Date();
         const expiresAt = new Date(currentEmail.expires_at);
@@ -139,9 +141,37 @@ function App() {
         
         if (diffSeconds <= 0) {
           setTimeLeft(0);
-          // Email expired, auto-create new email
-          toast.info('Email đã hết hạn, đang tạo email mới...');
-          await createNewEmail();
+          
+          // Email expired, auto-create new email (only once)
+          if (!isCreatingNewEmail) {
+            isCreatingNewEmail = true;
+            toast.info('Email đã hết hạn, đang tạo email mới...');
+            
+            try {
+              const response = await axios.post(`${API}/emails/create`, {});
+              const newEmail = response.data;
+              
+              setCurrentEmail(newEmail);
+              setMessages([]);
+              setSelectedMessage(null);
+              
+              toast.success('Email mới đã được tạo!', {
+                description: newEmail.address
+              });
+              
+              // Reload history
+              try {
+                const historyResponse = await axios.get(`${API}/emails/history/list`);
+                setHistoryEmails(historyResponse.data);
+              } catch (err) {
+                console.error('Error reloading history:', err);
+              }
+            } catch (error) {
+              toast.error('Không thể tạo email mới', {
+                description: error.response?.data?.detail || 'Lỗi không xác định'
+              });
+            }
+          }
         } else {
           setTimeLeft(diffSeconds);
         }
