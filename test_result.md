@@ -387,16 +387,17 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Không có - Ứng dụng cần được chạy trên máy local để test"
+    - "Thêm tính năng hết hạn email tự động"
+    - "Thêm UI cho lịch sử email với tính năng xóa"
   stuck_tasks: []
   test_all: false
-  test_priority: "N/A"
+  test_priority: "high_first"
   note: |
-    Ứng dụng đã sẵn sàng để chạy trên máy local.
-    User cần:
-    1. Download code về máy
-    2. Đảm bảo MySQL đang chạy
-    3. Chạy: bash start_app.sh
+    Testing mới:
+    1. Backend: Test API endpoints mới (extend-time, history)
+    2. Backend: Kiểm tra background task (có thể cần đợi 30s)
+    3. Frontend: Test timer, extend time, history UI
+    4. Integration: Test flow hoàn chỉnh (create → wait → expire → history)
 
 agent_communication:
   - agent: "main"
