@@ -230,26 +230,58 @@ class TempMailAPITester:
             return False
 
 def main():
-    print("🚀 Starting TempMail API Tests...")
-    print("=" * 50)
+    print("🚀 Starting TempMail API Tests - Email Expiry Features")
+    print("=" * 70)
     
     tester = TempMailAPITester()
     
     # Test 1: Root endpoint
     tester.test_root_endpoint()
     
-    # Test 2: Create email without username
-    print("\n📧 Testing Email Creation...")
+    # Test 2: Create email and verify expiry fields
+    print("\n📧 Testing Email Creation with Expiry...")
     success1, email1 = tester.test_create_email()
+    if success1:
+        print(f"   Created email: {email1.get('address', 'N/A')}")
+        print(f"   Created at: {email1.get('created_at', 'N/A')}")
+        print(f"   Expires at: {email1.get('expires_at', 'N/A')}")
+        
+        # Verify expiry time is ~10 minutes from creation
+        if 'created_at' in email1 and 'expires_at' in email1:
+            tester.verify_expiry_time(email1['created_at'], email1['expires_at'])
     
-    # Test 3: Create email with custom username
+    # Test 3: Create another email with custom username
     success2, email2 = tester.test_create_email_with_username()
+    if success2:
+        print(f"   Created email: {email2.get('address', 'N/A')}")
+        print(f"   Expires at: {email2.get('expires_at', 'N/A')}")
     
-    # Test 4: Get all emails
-    print("\n📋 Testing Email Listing...")
-    tester.test_get_emails()
+    # Test 4: Get all emails and verify expires_at field
+    print("\n📋 Testing Get Emails with Expiry Field...")
+    success_list, emails_data = tester.test_get_emails()
+    if success_list and isinstance(emails_data, list):
+        print(f"   Found {len(emails_data)} email(s)")
+        for email in emails_data:
+            if 'expires_at' in email:
+                print(f"   ✅ Email {email.get('address', 'N/A')} has expires_at field")
+            else:
+                print(f"   ❌ Email {email.get('address', 'N/A')} missing expires_at field")
     
-    # Test 5: Get specific emails (if created successfully)
+    # Test 5: Extend Time (KEY FEATURE)
+    if success1 and 'id' in email1:
+        print("\n⏰ Testing Extend Time Feature (Reset to 10 minutes)...")
+        old_expires_at = email1.get('expires_at')
+        print(f"   Old expires_at: {old_expires_at}")
+        
+        success_extend, extend_data = tester.test_extend_time(email1['id'])
+        if success_extend and 'expires_at' in extend_data:
+            new_expires_at = extend_data['expires_at']
+            print(f"   New expires_at: {new_expires_at}")
+            
+            # Verify it's reset to ~10 minutes from now (not added to old time)
+            tester.verify_extend_time_reset(old_expires_at, new_expires_at)
+    
+    # Test 6: Get specific emails
     if success1:
         print("\n🔍 Testing Individual Email Access...")
         tester.test_get_email_by_id(email1['id'])
@@ -258,23 +290,52 @@ def main():
         tester.test_get_email_messages(email1['id'])
         tester.test_refresh_messages(email1['id'])
     
-    if success2:
-        tester.test_get_email_by_id(email2['id'])
-        tester.test_get_email_messages(email2['id'])
-        tester.test_refresh_messages(email2['id'])
+    # Test 7: Email History
+    print("\n📚 Testing Email History...")
+    success_history, history_data = tester.test_get_history()
+    if success_history:
+        if isinstance(history_data, list):
+            print(f"   Found {len(history_data)} history email(s)")
+            if len(history_data) > 0:
+                # Store first history email for testing
+                first_history = history_data[0]
+                tester.history_emails.append(first_history)
+                print(f"   History email: {first_history.get('address', 'N/A')}")
+                print(f"   Expired at: {first_history.get('expired_at', 'N/A')}")
+                
+                # Test getting messages from history
+                if 'id' in first_history:
+                    print("\n📨 Testing History Messages...")
+                    tester.test_get_history_messages(first_history['id'])
+            else:
+                print("   ℹ️  No history emails yet (expected for new system)")
     
-    # Test 6: Error handling
+    # Test 8: Delete History - Selective
+    if len(tester.history_emails) > 0:
+        print("\n🗑️ Testing Selective History Deletion...")
+        ids_to_delete = [tester.history_emails[0]['id']]
+        success_del, del_data = tester.test_delete_history_selective(ids_to_delete)
+        if success_del:
+            print(f"   Deleted count: {del_data.get('count', 0)}")
+    
+    # Test 9: Delete History - All (if any remaining)
+    print("\n🗑️ Testing Delete All History...")
+    success_del_all, del_all_data = tester.test_delete_history_all()
+    if success_del_all:
+        print(f"   Deleted count: {del_all_data.get('count', 0)}")
+    
+    # Test 10: Error handling
     print("\n❌ Testing Error Handling...")
     tester.test_nonexistent_email()
     tester.test_nonexistent_email_messages()
     
-    # Test 7: Delete emails (cleanup)
-    print("\n🗑️ Testing Email Deletion...")
+    # Test 11: Delete emails (cleanup)
+    print("\n🗑️ Testing Email Deletion (Cleanup)...")
     for email in tester.created_emails:
         tester.test_delete_email(email['id'])
     
     # Print final results
-    print("\n" + "=" * 50)
+    print("\n" + "=" * 70)
     print(f"📊 Test Results: {tester.tests_passed}/{tester.tests_run} passed")
     
     if tester.tests_passed == tester.tests_run:
