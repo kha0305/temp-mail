@@ -408,10 +408,10 @@ function App() {
                         onClick={addTime}
                         className="action-btn"
                         variant="outline"
-                        disabled={timeLeft >= 1200}
+                        disabled={loading || currentEmail?.isHistory}
                       >
                         <Clock className="h-5 w-5 mr-2" />
-                        Thêm 10 phút nữa
+                        Làm mới 10 phút
                       </Button>
                       <Button
                         onClick={createNewEmail}
@@ -426,7 +426,7 @@ function App() {
                         onClick={deleteCurrentEmail}
                         className="action-btn action-btn-danger"
                         variant="outline"
-                        disabled={loading}
+                        disabled={loading || currentEmail?.isHistory}
                       >
                         <Trash2 className="h-5 w-5 mr-2" />
                         Xóa
