@@ -62,6 +62,7 @@ function App() {
   useEffect(() => {
     const initializeApp = async () => {
       try {
+        // Load existing emails
         const response = await axios.get(`${API}/emails`);
         const emails = response.data;
         
@@ -69,17 +70,59 @@ function App() {
           // Set the first email as current
           const latest = emails[0];
           setCurrentEmail(latest);
-          await refreshMessages(latest.id, false);
+          
+          // Load messages for current email
+          try {
+            const msgResponse = await axios.post(`${API}/emails/${latest.id}/refresh`);
+            setMessages(msgResponse.data.messages);
+          } catch (err) {
+            console.error('Error loading initial messages:', err);
+          }
         } else {
           // No emails exist, auto-create one
           toast.info('Đang tạo email mới...');
-          await createNewEmail();
+          try {
+            const createResponse = await axios.post(`${API}/emails/create`, {});
+            const newEmail = createResponse.data;
+            
+            setCurrentEmail(newEmail);
+            setMessages([]);
+            setSelectedMessage(null);
+            
+            toast.success('Email mới đã được tạo!', {
+              description: newEmail.address
+            });
+          } catch (createErr) {
+            toast.error('Không thể tạo email mới', {
+              description: createErr.response?.data?.detail || 'Lỗi không xác định'
+            });
+          }
         }
         
         // Load history
-        await loadHistory();
+        try {
+          const historyResponse = await axios.get(`${API}/emails/history/list`);
+          setHistoryEmails(historyResponse.data);
+        } catch (histErr) {
+          console.error('Error loading history:', histErr);
+        }
       } catch (error) {
         console.error('Error initializing app:', error);
+        // If error getting emails, try to create one anyway
+        try {
+          toast.info('Đang tạo email mới...');
+          const createResponse = await axios.post(`${API}/emails/create`, {});
+          const newEmail = createResponse.data;
+          
+          setCurrentEmail(newEmail);
+          setMessages([]);
+          
+          toast.success('Email mới đã được tạo!', {
+            description: newEmail.address
+          });
+        } catch (createErr) {
+          toast.error('Không thể khởi tạo ứng dụng');
+        }
       }
     };
     
