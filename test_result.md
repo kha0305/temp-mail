@@ -450,8 +450,8 @@ infrastructure:
 
 metadata:
   created_by: "main_agent"
-  version: "2.0"
-  test_sequence: 1
+  version: "2.1"
+  test_sequence: 2
   run_ui: false
   environment: "container(MongoDB) / local(MySQL)"
   database: "MongoDB (container) / MySQL 8.0+ (local)"
@@ -462,6 +462,8 @@ metadata:
     - "Auto-create new email when expired"
     - "Email history with selective deletion"
     - "Extend time (reset to 10 minutes)"
+  last_test_date: "2025-11-07T12:34:00Z"
+  test_status: "passed"
 
 test_plan:
   current_focus: []
