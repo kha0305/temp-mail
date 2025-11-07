@@ -115,14 +115,25 @@ function App() {
       const emails = response.data;
       
       if (emails.length > 0) {
-        // Set the first email as current
+        // Set the first email as current (most recent active email)
         const latest = emails[0];
         setCurrentEmail(latest);
-        setHistoryEmails(emails.slice(1));
         await refreshMessages(latest.id, false);
+      } else {
+        setCurrentEmail(null);
+        setMessages([]);
       }
     } catch (error) {
       console.error('Error loading emails:', error);
+    }
+  };
+
+  const loadHistory = async () => {
+    try {
+      const response = await axios.get(`${API}/emails/history/list`);
+      setHistoryEmails(response.data);
+    } catch (error) {
+      console.error('Error loading history:', error);
     }
   };
 
