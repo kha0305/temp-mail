@@ -1,33 +1,53 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 const TempMail = () => {
+  const [activeTab, setActiveTab] = useState('current');
   const [domains, setDomains] = useState([]);
-  const [selectedService, setSelectedService] = useState('');
-  const [selectedDomain, setSelectedDomain] = useState('');
+  const [selectedService, setSelectedService] = useState('mail.tm');
   const [currentEmail, setCurrentEmail] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [emailHistory, setEmailHistory] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState(null);
+  const [timeLeft, setTimeLeft] = useState(600); // 10 minutes in seconds
 
-  // Fetch available domains
+  // Fetch available domains on mount
   useEffect(() => {
     fetchDomains();
+    loadEmailHistory();
   }, []);
+
+  // Timer countdown
+  useEffect(() => {
+    if (currentEmail && timeLeft > 0) {
+      const timer = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => clearInterval(timer);
+    }
+  }, [currentEmail, timeLeft]);
 
   // Auto refresh messages every 1 minute
   useEffect(() => {
-    if (currentEmail && currentEmail.token) {
+    if (currentEmail && currentEmail.token && activeTab === 'current') {
       const interval = setInterval(() => {
         fetchMessages();
       }, 60000); // 60 seconds
 
       return () => clearInterval(interval);
     }
-  }, [currentEmail]);
+  }, [currentEmail, activeTab]);
 
   const fetchDomains = async () => {
     try {
