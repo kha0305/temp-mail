@@ -484,7 +484,10 @@ function App() {
     const serviceMap = {
       'mailtm': 'Mail.tm',
       'mailgw': 'Mail.gw',
-      '1secmail': '1secmail'
+      '1secmail': '1secmail',
+      'guerrilla': 'Guerrilla Mail',
+      'tempmail_lol': 'TempMail.lol',
+      'dropmail': 'DropMail'
     };
     return serviceMap[provider] || provider;
   };
