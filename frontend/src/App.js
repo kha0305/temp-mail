@@ -1049,85 +1049,158 @@ function App() {
 
             {/* Saved Emails Tab */}
             <TabsContent value="saved" className="tab-content-new">
-              <div className="history-section">
-                <div className="history-header">
-                  <h2 className="history-title">Mail đã lưu</h2>
-                  {savedEmails.length > 0 && (
-                    <div className="history-actions">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={toggleSelectAllSaved}
-                        className="select-all-btn"
-                      >
-                        {selectedSavedIds.length === savedEmails.length ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={deleteSelectedSaved}
-                        disabled={selectedSavedIds.length === 0 || loading}
-                        className="delete-selected-btn"
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Xóa đã chọn ({selectedSavedIds.length})
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={deleteAllSaved}
-                        disabled={loading}
-                        className="delete-all-btn"
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Xóa tất cả
-                      </Button>
+              {viewMode === 'list' || activeTab !== 'saved' ? (
+                <div className="history-section">
+                  <div className="history-header">
+                    <h2 className="history-title">Mail đã lưu</h2>
+                    {savedEmails.length > 0 && (
+                      <div className="history-actions">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={toggleSelectAllSaved}
+                          className="select-all-btn"
+                        >
+                          {selectedSavedIds.length === savedEmails.length ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={deleteSelectedSaved}
+                          disabled={selectedSavedIds.length === 0 || loading}
+                          className="delete-selected-btn"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Xóa đã chọn ({selectedSavedIds.length})
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={deleteAllSaved}
+                          disabled={loading}
+                          className="delete-all-btn"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Xóa tất cả
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                  {savedEmails.length === 0 ? (
+                    <div className="empty-state">
+                      <Bookmark className="empty-icon" />
+                      <h4 className="empty-title">Chưa có email đã lưu</h4>
+                      <p className="empty-description">Click nút "Lưu" khi xem email để lưu lại</p>
                     </div>
+                  ) : (
+                    <ScrollArea className="history-list">
+                      {savedEmails.map((email) => (
+                        <Card 
+                          key={email.id} 
+                          className={`history-card ${selectedSavedIds.includes(email.id) ? 'selected' : ''}`}
+                        >
+                          <CardContent className="history-card-content">
+                            <input
+                              type="checkbox"
+                              checked={selectedSavedIds.includes(email.id)}
+                              onChange={() => toggleSavedSelection(email.id)}
+                              className="history-checkbox"
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            <div 
+                              className="history-info"
+                              onClick={() => viewSavedEmail(email)}
+                            >
+                              <Bookmark className="h-5 w-5 history-icon" />
+                              <div className="history-details">
+                                <p className="history-address">{email.subject || 'Không có tiêu đề'}</p>
+                                <span className="history-time">
+                                  Từ: {email.from?.name || email.from?.address}
+                                </span>
+                                <span className="history-time">
+                                  Lưu lúc: {getTimeAgo(email.saved_at)}
+                                </span>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </ScrollArea>
                   )}
                 </div>
-
-                {savedEmails.length === 0 ? (
-                  <div className="empty-state">
-                    <Bookmark className="empty-icon" />
-                    <h4 className="empty-title">Chưa có email đã lưu</h4>
-                    <p className="empty-description">Click nút "Lưu" khi xem email để lưu lại</p>
+              ) : (
+                <div className="message-detail">
+                  <div className="message-detail-header">
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        setViewMode('list');
+                        setSavedMessageDetail(null);
+                        setSelectedSavedEmail(null);
+                      }}
+                      className="back-btn"
+                    >
+                      ← Quay lại danh sách
+                    </Button>
                   </div>
-                ) : (
-                  <ScrollArea className="history-list">
-                    {savedEmails.map((email) => (
-                      <Card 
-                        key={email.id} 
-                        className={`history-card ${selectedSavedIds.includes(email.id) ? 'selected' : ''}`}
-                      >
-                        <CardContent className="history-card-content">
-                          <input
-                            type="checkbox"
-                            checked={selectedSavedIds.includes(email.id)}
-                            onChange={() => toggleSavedSelection(email.id)}
-                            className="history-checkbox"
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                          <div 
-                            className="history-info"
-                            onClick={() => viewSavedEmail(email)}
-                          >
-                            <Bookmark className="h-5 w-5 history-icon" />
-                            <div className="history-details">
-                              <p className="history-address">{email.subject || 'Không có tiêu đề'}</p>
-                              <span className="history-time">
-                                Từ: {email.from?.name || email.from?.address}
+                  
+                  {savedMessageDetail && (
+                    <Card className="detail-card">
+                      <CardContent className="detail-content">
+                        <div className="detail-header">
+                          <h3 className="detail-subject">{savedMessageDetail.subject}</h3>
+                          <div className="detail-meta">
+                            <div className="meta-row">
+                              <span className="meta-label">Từ:</span>
+                              <span className="meta-value">
+                                {savedMessageDetail.from?.name} ({savedMessageDetail.from?.address})
                               </span>
-                              <span className="history-time">
-                                Lưu lúc: {getTimeAgo(email.saved_at)}
+                            </div>
+                            <div className="meta-row">
+                              <span className="meta-label">Ngày:</span>
+                              <span className="meta-value">
+                                {new Date(savedMessageDetail.createdAt).toLocaleString('vi-VN')}
                               </span>
                             </div>
                           </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </ScrollArea>
-                )}
-              </div>
+                        </div>
+
+                        <Separator className="detail-separator" />
+
+                        <Tabs defaultValue="html" className="message-tabs">
+                          <TabsList>
+                            <TabsTrigger value="html">HTML</TabsTrigger>
+                            <TabsTrigger value="text">Text</TabsTrigger>
+                          </TabsList>
+                          <TabsContent value="html" className="message-content">
+                            {savedMessageDetail.html && Array.isArray(savedMessageDetail.html) && 
+                             savedMessageDetail.html.length > 0 && savedMessageDetail.html[0] ? (
+                              <div className="html-content" dangerouslySetInnerHTML={{ __html: savedMessageDetail.html[0] }} />
+                            ) : savedMessageDetail.html && typeof savedMessageDetail.html === 'string' && 
+                               savedMessageDetail.html.trim() ? (
+                              <div className="html-content" dangerouslySetInnerHTML={{ __html: savedMessageDetail.html }} />
+                            ) : (
+                              <p className="no-content">Không có nội dung HTML</p>
+                            )}
+                          </TabsContent>
+                          <TabsContent value="text" className="message-content">
+                            {savedMessageDetail.text && Array.isArray(savedMessageDetail.text) && 
+                             savedMessageDetail.text.length > 0 && savedMessageDetail.text[0] ? (
+                              <pre className="text-content">{savedMessageDetail.text[0]}</pre>
+                            ) : savedMessageDetail.text && typeof savedMessageDetail.text === 'string' && 
+                               savedMessageDetail.text.trim() ? (
+                              <pre className="text-content">{savedMessageDetail.text}</pre>
+                            ) : (
+                              <p className="no-content">Không có nội dung văn bản</p>
+                            )}
+                          </TabsContent>
+                        </Tabs>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              )}
             </TabsContent>
 
             {/* History Tab */}
