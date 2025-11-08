@@ -296,11 +296,12 @@ async def create_1secmail_account(username: str, domain: str):
 
 
 async def get_1secmail_messages(username: str, domain: str):
-    """Get messages from 1secmail"""
+    """Get messages from 1secmail with proper headers"""
     async with httpx.AsyncClient(timeout=10.0) as client:
         try:
             response = await client.get(
-                f"{ONESECMAIL_BASE_URL}/?action=getMessages&login={username}&domain={domain}"
+                f"{ONESECMAIL_BASE_URL}/?action=getMessages&login={username}&domain={domain}",
+                headers=BROWSER_HEADERS
             )
             response.raise_for_status()
             messages = response.json()
