@@ -38,7 +38,7 @@ yarn start
 ```
 
 ### Truy cập
-- **Frontend**: http://localhost:3000
+- **Frontend**: http://localhost:7050
 - **Backend API**: http://localhost:8001
 - **API Docs**: http://localhost:8001/docs
 
