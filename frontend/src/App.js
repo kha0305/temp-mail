@@ -600,9 +600,11 @@ function App() {
                               onChange={(e) => setSelectedService(e.target.value)}
                               disabled={loading}
                             >
-                              <option value="auto">Tự động (Mail.tm → 1secmail)</option>
+                              <option value="auto">Tự động (Tất cả dịch vụ)</option>
                               <option value="mailtm">Mail.tm</option>
+                              <option value="mailgw">Mail.gw</option>
                               <option value="1secmail">1secmail</option>
+                              <option value="guerrilla">Guerrilla Mail</option>
                             </select>
                           </div>
                           <div className="form-group">
