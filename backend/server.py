@@ -726,13 +726,20 @@ async def get_email(email_id: int, db: Session = Depends(get_db)):
 
 @api_router.get("/emails/{email_id}/messages")
 async def get_email_messages(email_id: int, db: Session = Depends(get_db)):
-    """Get messages for an email"""
+    """Get messages for an email (multi-service support)"""
     email = db.query(TempEmailModel).filter(TempEmailModel.id == email_id).first()
     if not email:
         raise HTTPException(status_code=404, detail="Email not found")
     
-    # Get messages from Mail.tm
-    messages = await get_mailtm_messages(email.token)
+    # Get messages based on provider
+    if email.provider == "mailtm":
+        messages = await get_mailtm_messages(email.token)
+    elif email.provider == "mailgw":
+        messages = await get_mailgw_messages(email.token)
+    elif email.provider == "1secmail":
+        messages = await get_1secmail_messages(email.username, email.domain)
+    else:
+        messages = []
     
     # Update message count
     email.message_count = len(messages)
@@ -743,12 +750,21 @@ async def get_email_messages(email_id: int, db: Session = Depends(get_db)):
 
 @api_router.get("/emails/{email_id}/messages/{message_id}")
 async def get_message_detail(email_id: int, message_id: str, db: Session = Depends(get_db)):
-    """Get message detail"""
+    """Get message detail (multi-service support)"""
     email = db.query(TempEmailModel).filter(TempEmailModel.id == email_id).first()
     if not email:
         raise HTTPException(status_code=404, detail="Email not found")
     
-    message = await get_mailtm_message_detail(email.token, message_id)
+    # Get message based on provider
+    if email.provider == "mailtm":
+        message = await get_mailtm_message_detail(email.token, message_id)
+    elif email.provider == "mailgw":
+        message = await get_mailgw_message_detail(email.token, message_id)
+    elif email.provider == "1secmail":
+        message = await get_1secmail_message_detail(email.username, email.domain, message_id)
+    else:
+        message = None
+    
     if not message:
         raise HTTPException(status_code=404, detail="Message not found")
     
@@ -757,12 +773,20 @@ async def get_message_detail(email_id: int, message_id: str, db: Session = Depen
 
 @api_router.post("/emails/{email_id}/refresh")
 async def refresh_messages(email_id: int, db: Session = Depends(get_db)):
-    """Refresh messages for an email"""
+    """Refresh messages for an email (multi-service support)"""
     email = db.query(TempEmailModel).filter(TempEmailModel.id == email_id).first()
     if not email:
         raise HTTPException(status_code=404, detail="Email not found")
     
-    messages = await get_mailtm_messages(email.token)
+    # Get messages based on provider
+    if email.provider == "mailtm":
+        messages = await get_mailtm_messages(email.token)
+    elif email.provider == "mailgw":
+        messages = await get_mailgw_messages(email.token)
+    elif email.provider == "1secmail":
+        messages = await get_1secmail_messages(email.username, email.domain)
+    else:
+        messages = []
     
     email.message_count = len(messages)
     db.commit()
