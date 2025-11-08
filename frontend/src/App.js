@@ -280,6 +280,14 @@ function App() {
     }
   }, [currentEmail?.id, currentEmail?.isHistory, autoRefresh]);
 
+  // Reset view mode when changing tabs
+  useEffect(() => {
+    setViewMode('list');
+    setSelectedMessage(null);
+    setSavedMessageDetail(null);
+    setHistoryMessages([]);
+  }, [activeTab]);
+
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
