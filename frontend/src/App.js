@@ -49,6 +49,7 @@ function ThemeToggle() {
 function App() {
   const [currentEmail, setCurrentEmail] = useState(null);
   const [historyEmails, setHistoryEmails] = useState([]);
+  const [savedEmails, setSavedEmails] = useState([]);
   const [messages, setMessages] = useState([]);
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -57,6 +58,7 @@ function App() {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [activeTab, setActiveTab] = useState('current');
   const [selectedHistoryIds, setSelectedHistoryIds] = useState([]);
+  const [selectedSavedIds, setSelectedSavedIds] = useState([]);
   
   // Service & Domain selection
   const [selectedService, setSelectedService] = useState('auto'); // Default: Auto
