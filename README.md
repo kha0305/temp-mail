@@ -34,7 +34,7 @@ python -m uvicorn server:app --host 0.0.0.0 --port 8001 --reload
 # 5. Chạy frontend (Terminal 2)
 cd frontend
 yarn install
-yarn start
+PORT=7050 yarn start
 ```
 
 ### Truy cập
