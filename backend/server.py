@@ -220,9 +220,28 @@ async def root():
 
 @api_router.post("/emails/create", response_model=CreateEmailResponse)
 async def create_email(request: CreateEmailRequest, db: Session = Depends(get_db)):
-    """Create a new temporary email"""
+    """Create a new temporary email with rate limiting"""
     try:
-        # Get available domain
+        # Check local rate limit (max 3 emails per minute)
+        current_time = time.time()
+        
+        if current_time - _rate_limit_tracker["reset_time"] > 60:
+            # Reset counter after 1 minute
+            _rate_limit_tracker["create_count"] = 0
+            _rate_limit_tracker["reset_time"] = current_time
+        
+        if _rate_limit_tracker["create_count"] >= 3:
+            wait_seconds = int(60 - (current_time - _rate_limit_tracker["reset_time"]))
+            raise HTTPException(
+                status_code=429,
+                detail=f"Rate limit: Maximum 3 emails per minute. Please wait {wait_seconds} seconds."
+            )
+        
+        # Increment counter
+        _rate_limit_tracker["create_count"] += 1
+        _rate_limit_tracker["last_create_time"] = current_time
+        
+        # Get available domain (with caching)
         domain = await get_available_domains()
         if not domain:
             raise HTTPException(status_code=500, detail="No domains available")
@@ -236,7 +255,7 @@ async def create_email(request: CreateEmailRequest, db: Session = Depends(get_db
         address = f"{username}@{domain}"
         password = ''.join(random.choices(string.ascii_letters + string.digits, k=16))
         
-        # Create account on Mail.tm
+        # Create account on Mail.tm (with retry logic)
         account_data = await create_mailtm_account(address, password)
         
         # Get authentication token
