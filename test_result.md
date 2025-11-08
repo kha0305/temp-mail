@@ -1801,3 +1801,169 @@ agent_communication:
       Status: ✅ PRODUCTION READY with 3 active email providers
       Monitoring: No more 403 errors, clean logs, app stable
 
+  - agent: "main"
+    message: |
+      ✅ RANDOM PROVIDER SELECTION IMPLEMENTED (2025-11-08)
+      
+      User Request:
+      1. ❌ Không thấy service TempMail.lol
+      2. ❌ Lựa chọn đầu tiên (auto) không random, chạy theo thứ tự cố định
+      
+      === ANALYSIS ===
+      
+      Issue 1 - TempMail.lol Missing:
+      - TempMail.lol được đề cập trong code nhưng CHƯA được implement
+      - Không có functions để tạo email với TempMail.lol API
+      - TempMail.lol có API nhưng YÊU CẦU API KEY (X-API-Key header)
+      - User chưa cung cấp API key
+      
+      Issue 2 - Auto Mode Fixed Order:
+      - providers_to_try = ["mailtm", "1secmail", "mailgw", "guerrilla"]
+      - Luôn thử theo thứ tự cố định: Mail.tm → 1secmail → Mail.gw → Guerrilla
+      - Không có random selection
+      
+      === SOLUTION IMPLEMENTED ===
+      
+      ✅ Random Selection for Auto Mode:
+      
+      **Before (Fixed Order):**
+      ```python
+      else:  # auto
+          providers_to_try = ["mailtm", "1secmail", "mailgw", "guerrilla"]
+      ```
+      
+      **After (Random Selection):**
+      ```python
+      else:  # auto - RANDOM SELECTION
+          providers_to_try = ["mailtm", "mailgw", "guerrilla"]  # Removed 1secmail
+          random.shuffle(providers_to_try)  # Shuffle for random selection
+          logging.info(f"🎲 Random provider order: {providers_to_try}")
+      ```
+      
+      === KEY CHANGES ===
+      
+      1. ✅ Added random.shuffle() to providers_to_try list
+      2. ✅ Removed 1secmail from list (disabled, requires API key)
+      3. ✅ Active providers: Mail.tm, Mail.gw, Guerrilla Mail (3)
+      4. ✅ Added logging to track random order each request
+      5. ✅ Applied to both server.py and server_mongodb.py
+      
+      === TESTING RESULTS ===
+      
+      Test 1:
+      ```
+      🎲 Random provider order: ['guerrilla', 'mailgw', 'mailtm']
+      ✅ Email created with Guerrilla Mail
+      ```
+      
+      Test 2:
+      ```
+      🎲 Random provider order: ['mailtm', 'mailgw', 'guerrilla']
+      ✅ Email created with Mail.tm
+      ```
+      
+      Test 3:
+      ```
+      🎲 Random provider order: ['mailgw', 'guerrilla', 'mailtm']
+      ✅ Email created with Mail.gw
+      ```
+      
+      Test 4:
+      ```
+      🎲 Random provider order: ['mailgw', 'mailtm', 'guerrilla']
+      ✅ Email created with Mail.gw
+      ```
+      
+      === BENEFITS ===
+      
+      1. ✅ Load Balancing:
+         - Phân tán tải đều giữa các providers
+         - Tránh overload một service cụ thể
+      
+      2. ✅ Bypass Rate Limits:
+         - Không hit cùng một provider liên tục
+         - Giảm khả năng bị rate limit
+      
+      3. ✅ Improved Reliability:
+         - Không phụ thuộc vào một provider cố định
+         - Tăng khả năng tạo email thành công
+      
+      4. ✅ Better User Experience:
+         - Không có bias về provider nào
+         - Tất cả providers được sử dụng đồng đều
+      
+      === FILES MODIFIED ===
+      
+      Backend:
+      - /app/backend/server.py
+        • Line ~659: Added random.shuffle(providers_to_try)
+        • Line ~660: Added logging for random order
+      
+      - /app/backend/server_mongodb.py
+        • Line ~589: Same changes for consistency
+      
+      Documentation:
+      - /app/RANDOM_PROVIDER_SELECTION.md: Complete documentation
+      
+      === TEMPMAIL.LOL STATUS ===
+      
+      Research Results:
+      - ✅ TempMail.lol has public API
+      - ✅ Endpoint: https://api.temp-mail.io
+      - ❌ Requires API key (X-API-Key header)
+      - ❌ User has NOT provided API key yet
+      
+      API Details:
+      - Create inbox: POST /v1/emails
+      - Fetch messages: GET /v1/emails/{email}/messages
+      - Message detail: GET /v1/messages/{message_id}
+      - Plans: Free (1h), Plus (10h), Ultra (30h)
+      
+      Next Steps for TempMail.lol:
+      1. User needs to register at: https://tempmail.lol/en/api
+      2. Get API key from account
+      3. Provide API key to implement integration
+      
+      === CURRENT STATUS ===
+      
+      ✅ Random Selection: WORKING
+      - Each request gets random provider order
+      - Logs confirm shuffle working correctly
+      - All 3 providers rotating properly
+      
+      ⏳ TempMail.lol: PENDING
+      - Waiting for user to provide API key
+      - Can implement once key is available
+      
+      === PROVIDER SUMMARY ===
+      
+      Active (3):
+      - ✅ Mail.tm (free, no auth)
+      - ✅ Mail.gw (free, no auth)
+      - ✅ Guerrilla Mail (free, no auth)
+      
+      Disabled (1):
+      - ❌ 1secmail (requires API key)
+      
+      Pending (1):
+      - 🔍 TempMail.lol (requires API key from user)
+      
+      === MONITORING ===
+      
+      Check Random Order:
+      ```bash
+      tail -f /var/log/supervisor/backend.*.log | grep "🎲"
+      ```
+      
+      Expected Output:
+      ```
+      🎲 Random provider order: ['guerrilla', 'mailgw', 'mailtm']
+      🎲 Random provider order: ['mailtm', 'mailgw', 'guerrilla']
+      🎲 Random provider order: ['mailgw', 'guerrilla', 'mailtm']
+      ```
+      
+      Status: ✅ PRODUCTION READY
+      Random Selection: ✅ WORKING
+      Testing: ✅ VERIFIED
+
+
