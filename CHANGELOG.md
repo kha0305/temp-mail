@@ -56,7 +56,7 @@
 - **`frontend/.env`**:
   ```env
   # Cũ:
-  REACT_APP_BACKEND_URL=https://modest-neumann.preview.emergentagent.com
+  REACT_APP_BACKEND_URL=https://domain-mail-expand.preview.emergentagent.com
   
   # Mới:
   REACT_APP_BACKEND_URL=http://localhost:8001
