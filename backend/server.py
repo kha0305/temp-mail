@@ -899,8 +899,8 @@ async def get_message_detail(email_id: int, message_id: str):
     elif provider == "mailgw":
         message = await get_mailgw_message_detail(email["token"], message_id)
     elif provider == "1secmail":
-        # 1secmail is disabled - return empty messages
-        logging.warning(f"⚠️ Cannot fetch messages for 1secmail email {email_id} (provider disabled)")
+        # 1secmail is disabled - cannot fetch message details
+        logging.warning(f"⚠️ Cannot fetch message detail for 1secmail email {email_id} (provider disabled)")
         message = None
     elif provider == "guerrilla":
         message = await get_guerrilla_message_detail(email["token"], message_id)
