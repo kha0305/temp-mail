@@ -220,6 +220,220 @@ async def get_mailtm_message_detail(token: str, message_id: str):
             return None
 
 
+
+# ============================================================================
+# SMTPLabs Service Functions (Fallback Provider)
+# ============================================================================
+
+async def smtplabs_create_account(address: str, password: str):
+    """Create account on SMTPLabs"""
+    if not SMTPLABS_API_KEY:
+        raise HTTPException(status_code=500, detail="SMTPLabs API key not configured")
+    
+    async with httpx.AsyncClient(timeout=10.0) as http_client:
+        for attempt in range(3):
+            try:
+                response = await http_client.post(
+                    f"{SMTPLABS_BASE_URL}/accounts",
+                    headers={
+                        "X-API-KEY": SMTPLABS_API_KEY,
+                        "Content-Type": "application/json",
+                        "Accept": "application/json"
+                    },
+                    json={"address": address, "password": password}
+                )
+                response.raise_for_status()
+                data = response.json()
+                logging.info(f"✅ SMTPLabs account created: {address}")
+                _provider_stats["smtplabs"]["success"] += 1
+                return data
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code == 429:
+                    wait_time = 2 ** attempt
+                    logging.warning(f"SMTPLabs rate limited, waiting {wait_time}s (attempt {attempt + 1}/3)")
+                    if attempt < 2:
+                        await asyncio.sleep(wait_time)
+                    else:
+                        _provider_stats["smtplabs"]["failures"] += 1
+                        _provider_stats["smtplabs"]["last_failure"] = time.time()
+                        raise HTTPException(status_code=429, detail="SMTPLabs API rate limit exceeded")
+                else:
+                    logging.error(f"SMTPLabs error creating account: {e}")
+                    _provider_stats["smtplabs"]["failures"] += 1
+                    _provider_stats["smtplabs"]["last_failure"] = time.time()
+                    raise HTTPException(status_code=400, detail=str(e))
+            except Exception as e:
+                logging.error(f"SMTPLabs error: {e}")
+                _provider_stats["smtplabs"]["failures"] += 1
+                _provider_stats["smtplabs"]["last_failure"] = time.time()
+                raise HTTPException(status_code=400, detail=str(e))
+
+
+async def smtplabs_get_mailboxes(account_id: str):
+    """Get mailboxes for SMTPLabs account"""
+    if not SMTPLABS_API_KEY:
+        return []
+    
+    async with httpx.AsyncClient(timeout=10.0) as http_client:
+        try:
+            response = await http_client.get(
+                f"{SMTPLABS_BASE_URL}/accounts/{account_id}/mailboxes",
+                headers={
+                    "X-API-KEY": SMTPLABS_API_KEY,
+                    "Accept": "application/json"
+                }
+            )
+            response.raise_for_status()
+            data = response.json()
+            return data.get("hydra:member", [])
+        except Exception as e:
+            logging.error(f"Error getting SMTPLabs mailboxes: {e}")
+            return []
+
+
+async def smtplabs_get_messages(account_id: str, mailbox_id: str):
+    """Get messages from SMTPLabs mailbox"""
+    if not SMTPLABS_API_KEY:
+        return []
+    
+    async with httpx.AsyncClient(timeout=10.0) as http_client:
+        try:
+            response = await http_client.get(
+                f"{SMTPLABS_BASE_URL}/accounts/{account_id}/mailboxes/{mailbox_id}/messages",
+                headers={
+                    "X-API-KEY": SMTPLABS_API_KEY,
+                    "Accept": "application/json"
+                }
+            )
+            response.raise_for_status()
+            data = response.json()
+            return data.get("hydra:member", [])
+        except Exception as e:
+            logging.error(f"Error getting SMTPLabs messages: {e}")
+            return []
+
+
+async def smtplabs_get_message_detail(account_id: str, mailbox_id: str, message_id: str):
+    """Get message detail from SMTPLabs"""
+    if not SMTPLABS_API_KEY:
+        return None
+    
+    async with httpx.AsyncClient(timeout=10.0) as http_client:
+        try:
+            response = await http_client.get(
+                f"{SMTPLABS_BASE_URL}/accounts/{account_id}/mailboxes/{mailbox_id}/messages/{message_id}",
+                headers={
+                    "X-API-KEY": SMTPLABS_API_KEY,
+                    "Accept": "application/json"
+                }
+            )
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            logging.error(f"Error getting SMTPLabs message detail: {e}")
+            return None
+
+
+# ============================================================================
+# Unified Email Creation with Fallback Logic
+# ============================================================================
+
+async def create_email_with_fallback(username: str = None):
+    """
+    Create email with provider fallback:
+    1. Try Mail.tm first (free, no API key needed)
+    2. If Mail.tm fails (429 or error), fallback to SMTPLabs
+    """
+    errors = []
+    
+    # Strategy 1: Try Mail.tm first
+    try:
+        logging.info("🔄 Attempting to create email via Mail.tm...")
+        
+        # Get available domain
+        domain = await get_available_domains()
+        if not domain:
+            raise Exception("No domains available from Mail.tm")
+        
+        # Generate username
+        if not username:
+            username = ''.join(random.choices(string.ascii_lowercase + string.digits, k=10))
+        
+        address = f"{username}@{domain}"
+        password = ''.join(random.choices(string.ascii_letters + string.digits, k=16))
+        
+        # Create account
+        account_data = await create_mailtm_account(address, password)
+        
+        # Get token
+        token = await get_mailtm_token(address, password)
+        
+        _provider_stats["mailtm"]["success"] += 1
+        
+        return {
+            "provider": "mailtm",
+            "address": address,
+            "password": password,
+            "token": token,
+            "account_id": account_data["id"],
+            "mailbox_id": None  # Mail.tm doesn't use separate mailbox IDs
+        }
+        
+    except Exception as e:
+        error_msg = str(e)
+        errors.append(f"Mail.tm: {error_msg}")
+        _provider_stats["mailtm"]["failures"] += 1
+        _provider_stats["mailtm"]["last_failure"] = time.time()
+        logging.warning(f"❌ Mail.tm failed: {error_msg}")
+    
+    # Strategy 2: Fallback to SMTPLabs
+    if SMTPLABS_API_KEY:
+        try:
+            logging.info("🔄 Falling back to SMTPLabs...")
+            
+            # SMTPLabs needs custom domain from their service
+            # Generate a unique email with smtp.dev domain
+            if not username:
+                username = ''.join(random.choices(string.ascii_lowercase + string.digits, k=10))
+            
+            # SMTPLabs allows custom domains but we'll use a test pattern
+            address = f"{username}@test.smtp.dev"  # Use their test domain
+            password = ''.join(random.choices(string.ascii_letters + string.digits, k=16))
+            
+            # Create account
+            account_data = await smtplabs_create_account(address, password)
+            
+            # Get mailboxes to find inbox
+            mailboxes = await smtplabs_get_mailboxes(account_data["id"])
+            inbox_id = mailboxes[0]["id"] if mailboxes else None
+            
+            return {
+                "provider": "smtplabs",
+                "address": address,
+                "password": password,
+                "token": SMTPLABS_API_KEY,  # SMTPLabs uses API key, not per-account token
+                "account_id": account_data["id"],
+                "mailbox_id": inbox_id
+            }
+            
+        except Exception as e:
+            error_msg = str(e)
+            errors.append(f"SMTPLabs: {error_msg}")
+            logging.error(f"❌ SMTPLabs also failed: {error_msg}")
+    else:
+        errors.append("SMTPLabs: API key not configured")
+        logging.warning("⚠️  SMTPLabs API key not configured, cannot use as fallback")
+    
+    # Both providers failed
+    error_detail = " | ".join(errors)
+    logging.error(f"❌ All providers failed: {error_detail}")
+    raise HTTPException(
+        status_code=503,
+        detail=f"All email providers unavailable. Errors: {error_detail}"
+    )
+
+
+
 # API Routes
 @api_router.get("/")
 async def root():
