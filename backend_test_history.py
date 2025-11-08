@@ -5,7 +5,7 @@ import requests
 import time
 from datetime import datetime, timezone, timedelta
 
-BASE_URL = "https://auto-email-create.preview.emergentagent.com"
+BASE_URL = "https://fastmail-service.preview.emergentagent.com"
 API_URL = f"{BASE_URL}/api"
 
 def test_history_flow():

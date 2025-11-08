@@ -13,7 +13,7 @@ Có 2 môi trường khác nhau:
 **Supervisor Config (READONLY):**
 ```
 Port: 3000 (hardcoded)
-URL: https://auto-email-create.preview.emergentagent.com
+URL: https://fastmail-service.preview.emergentagent.com
 ```
 
 ⚠️ **File `/etc/supervisor/conf.d/supervisord.conf` là READONLY**
