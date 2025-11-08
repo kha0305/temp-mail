@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
 * {
   margin: 0;
@@ -7,31 +7,61 @@
 }
 
 :root {
-  --bg-primary: #f8fafc;
+  /* Modern Color Palette - Light Mode */
+  --bg-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   --bg-secondary: #ffffff;
-  --bg-tertiary: #f1f5f9;
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #94a3b8;
-  --accent: #0891b2;
-  --accent-hover: #0e7490;
-  --border: #e2e8f0;
-  --shadow: rgba(15, 23, 42, 0.05);
-  --shadow-lg: rgba(15, 23, 42, 0.1);
+  --bg-tertiary: #f8f9fa;
+  --bg-card: rgba(255, 255, 255, 0.95);
+  --text-primary: #1a1a2e;
+  --text-secondary: #505050;
+  --text-muted: #9ca3af;
+  
+  /* Vibrant Accent Colors */
+  --accent-primary: #667eea;
+  --accent-secondary: #764ba2;
+  --accent-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --accent-hover: #5568d3;
+  
+  /* UI Elements */
+  --border: rgba(0, 0, 0, 0.08);
+  --border-hover: rgba(102, 126, 234, 0.3);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 32px rgba(102, 126, 234, 0.15);
+  --shadow-xl: 0 16px 48px rgba(102, 126, 234, 0.2);
+  
+  /* Glass Effect */
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.18);
 }
 
 .dark {
-  --bg-primary: #0f172a;
-  --bg-secondary: #1e293b;
-  --bg-tertiary: #334155;
-  --text-primary: #f1f5f9;
+  /* Dark Mode - Modern & Sleek */
+  --bg-primary: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  --bg-secondary: #1a1a2e;
+  --bg-tertiary: #16213e;
+  --bg-card: rgba(26, 26, 46, 0.95);
+  --text-primary: #ffffff;
   --text-secondary: #cbd5e1;
-  --text-muted: #64748b;
-  --accent: #22d3ee;
-  --accent-hover: #06b6d4;
-  --border: #334155;
-  --shadow: rgba(0, 0, 0, 0.2);
-  --shadow-lg: rgba(0, 0, 0, 0.4);
+  --text-muted: #94a3b8;
+  
+  /* Vibrant Accent Colors for Dark Mode */
+  --accent-primary: #8b5cf6;
+  --accent-secondary: #ec4899;
+  --accent-gradient: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+  --accent-hover: #7c3aed;
+  
+  /* UI Elements */
+  --border: rgba(255, 255, 255, 0.08);
+  --border-hover: rgba(139, 92, 246, 0.4);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 32px rgba(139, 92, 246, 0.25);
+  --shadow-xl: 0 16px 48px rgba(139, 92, 246, 0.3);
+  
+  /* Glass Effect for Dark Mode */
+  --glass-bg: rgba(26, 26, 46, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.1);
 }
 
 body {
