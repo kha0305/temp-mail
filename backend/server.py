@@ -12,6 +12,8 @@ from datetime import datetime, timezone, timedelta
 import httpx
 import random
 import string
+import asyncio
+import time
 
 from database import engine, get_db, Base
 from models import TempEmail as TempEmailModel, EmailHistory as EmailHistoryModel
@@ -30,6 +32,21 @@ api_router = APIRouter(prefix="/api")
 
 # Mail.tm Configuration
 MAILTM_BASE_URL = "https://api.mail.tm"
+
+# Rate limiting tracking (in-memory)
+# In production, use Redis or database
+_rate_limit_tracker = {
+    "last_create_time": 0,
+    "create_count": 0,
+    "reset_time": 0
+}
+
+# Domain cache to reduce API calls
+_domain_cache = {
+    "domain": None,
+    "cached_at": 0,
+    "ttl": 300  # Cache for 5 minutes
+}
 
 
 # Pydantic Models
