@@ -113,6 +113,19 @@ class CreateEmailResponse(BaseModel):
     address: str
     created_at: datetime
     expires_at: datetime
+    provider: str
+    service_name: str
+
+
+class DeleteHistoryRequest(BaseModel):
+    ids: Optional[List[int]] = None
+
+
+class CreateEmailResponse(BaseModel):
+    id: str
+    address: str
+    created_at: datetime
+    expires_at: datetime
 
 
 class DeleteHistoryRequest(BaseModel):
