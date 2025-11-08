@@ -1222,6 +1222,3 @@ agent_communication:
       ✅ SMTPLabs account created with key2: test@test.smtp.dev
       ✅ Successfully created email with SMTPLabs key2
       ```
-=======
-#====================================================================================================
->>>>>>> 9802088c29fbefbb5fe355e8fdb4e970da82d1fe
