@@ -237,7 +237,7 @@ Trước khi chạy, đảm bảo:
 ✅ **MySQL**: Đang chạy, database 'temp_mail' đã tạo
 ✅ **Config**: File .env đã cấu hình đúng (đặc biệt là DB_PASSWORD)
 ✅ **Dependencies**: Đã cài đặt đầy đủ cho backend và frontend
-✅ **Ports**: Port 8001 và 3000 không bị chiếm
+✅ **Ports**: Port 8001 và 7050 không bị chiếm
 ✅ **Init**: Đã chạy init_db.py thành công
 
 Nếu tất cả đều ✅, bạn có thể chạy ứng dụng!
