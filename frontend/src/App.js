@@ -59,7 +59,7 @@ function App() {
   const [selectedHistoryIds, setSelectedHistoryIds] = useState([]);
   
   // Service & Domain selection
-  const [selectedService, setSelectedService] = useState('auto'); // Default: Auto (Mail.tm → 1secmail)
+  const [selectedService, setSelectedService] = useState('auto'); // Default: Auto
   const [availableDomains, setAvailableDomains] = useState([]);
   const [selectedDomain, setSelectedDomain] = useState('');
   const [loadingDomains, setLoadingDomains] = useState(false);
