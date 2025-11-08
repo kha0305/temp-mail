@@ -719,10 +719,9 @@ function App() {
                 <>
                   {/* Hero Section */}
                   <div className="hero-section">
-                    <h2 className="hero-title">Địa chỉ email 10 phút của bạn</h2>
+                    <h2 className="hero-title">{heroTitle}</h2>
                     <p className="hero-description">
-                      Với 10 Minute Mail, hãy tránh thư rác, giữ hộp thư của bạn sạch sẽ 
-                      và bảo vệ quyền riêng tư của bạn một cách dễ dàng.
+                      Tránh thư rác, bảo vệ quyền riêng tư của bạn một cách dễ dàng
                     </p>
 
                     {/* Email Display */}
