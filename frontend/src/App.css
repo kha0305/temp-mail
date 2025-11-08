@@ -268,87 +268,127 @@ h1, h2, h3, h4, h5, h6 {
   animation: fadeIn 0.5s ease-out;
 }
 
-/* Hero Section */
+/* Modern Hero Section */
 .hero-section {
   text-align: center;
-  padding: 3rem 1rem;
+  padding: 3.5rem 1rem 4rem;
 }
 
 .hero-title {
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 1rem;
+  font-size: 3.5rem;
+  font-weight: 800;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 1.25rem;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  animation: slideInUp 0.6s ease-out;
 }
 
 .hero-description {
-  font-size: 1.125rem;
+  font-size: 1.2rem;
   color: var(--text-secondary);
-  max-width: 700px;
-  margin: 0 auto 3rem;
-  line-height: 1.6;
+  max-width: 720px;
+  margin: 0 auto 3.5rem;
+  line-height: 1.7;
+  font-weight: 400;
+  animation: slideInUp 0.7s ease-out;
 }
 
-/* Email Display Box */
+/* Premium Email Display Box with Glass Effect */
 .email-display-box {
-  background: var(--bg-secondary);
-  border: 2px solid var(--border);
-  border-radius: 12px;
-  padding: 1.5rem;
-  margin: 0 auto 2rem;
-  max-width: 700px;
-  box-shadow: 0 4px 6px var(--shadow);
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 2px solid var(--glass-border);
+  border-radius: 24px;
+  padding: 2rem 2.5rem;
+  margin: 0 auto 2.5rem;
+  max-width: 750px;
+  box-shadow: var(--shadow-xl);
+  position: relative;
+  overflow: hidden;
+  animation: slideInUp 0.8s ease-out;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.email-display-box::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--accent-gradient);
+}
+
+.email-display-box:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-xl), 0 0 60px rgba(139, 92, 246, 0.2);
 }
 
 .email-address-container {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 1.5rem;
 }
 
 .email-address {
-  font-size: 1.25rem;
-  font-weight: 500;
+  font-size: 1.35rem;
+  font-weight: 600;
   color: var(--text-primary);
-  font-family: 'Courier New', monospace;
+  font-family: 'Space Grotesk', 'Courier New', monospace;
+  letter-spacing: -0.01em;
 }
 
 .email-actions-inline {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 1.25rem;
 }
 
 .timer {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--accent);
-  font-family: 'Courier New', monospace;
-  min-width: 70px;
+  font-size: 2rem;
+  font-weight: 700;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-family: 'Space Grotesk', 'Courier New', monospace;
+  min-width: 90px;
+  letter-spacing: -0.02em;
 }
 
 .timer-warning {
-  color: #ef4444;
-  animation: pulse 1s infinite;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: pulse 1.5s ease-in-out infinite;
 }
 
 @keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.6;
-  }
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.05); }
 }
 
 .copy-btn-inline {
   color: var(--text-secondary);
-  transition: color 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 12px;
+  padding: 0.75rem;
+  background: var(--bg-tertiary);
 }
 
 .copy-btn-inline:hover {
-  color: var(--accent);
+  color: var(--accent-primary);
+  background: var(--accent-gradient);
+  color: white;
+  transform: scale(1.1) rotate(5deg);
+  box-shadow: var(--shadow-lg);
 }
 
 /* Action Buttons */
