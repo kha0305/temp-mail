@@ -249,13 +249,29 @@ async def get_mailtm_message_detail(token: str, message_id: str):
 
 
 # ============================================================================
-# SMTPLabs Service Functions (Fallback Provider)
+# SMTPLabs Service Functions (Fallback Provider with Multiple Keys)
 # ============================================================================
 
-async def smtplabs_create_account(address: str, password: str):
-    """Create account on SMTPLabs"""
-    if not SMTPLABS_API_KEY:
+def get_next_smtp_key():
+    """Get next SMTP key using round-robin selection"""
+    global _current_smtp_key_index
+    
+    if not SMTPLABS_API_KEYS:
+        return None, -1
+    
+    # Simple round-robin
+    key_index = _current_smtp_key_index % len(SMTPLABS_API_KEYS)
+    _current_smtp_key_index += 1
+    
+    return SMTPLABS_API_KEYS[key_index], key_index
+
+
+async def smtplabs_create_account(address: str, password: str, api_key: str, key_index: int):
+    """Create account on SMTPLabs with specific API key"""
+    if not api_key:
         raise HTTPException(status_code=500, detail="SMTPLabs API key not configured")
+    
+    key_name = f"smtplabs_key{key_index + 1}"
     
     async with httpx.AsyncClient(timeout=10.0) as http_client:
         for attempt in range(3):
@@ -263,7 +279,7 @@ async def smtplabs_create_account(address: str, password: str):
                 response = await http_client.post(
                     f"{SMTPLABS_BASE_URL}/accounts",
                     headers={
-                        "X-API-KEY": SMTPLABS_API_KEY,
+                        "X-API-KEY": api_key,
                         "Content-Type": "application/json",
                         "Accept": "application/json"
                     },
@@ -271,34 +287,35 @@ async def smtplabs_create_account(address: str, password: str):
                 )
                 response.raise_for_status()
                 data = response.json()
-                logging.info(f"✅ SMTPLabs account created: {address}")
-                _provider_stats["smtplabs"]["success"] += 1
+                logging.info(f"✅ SMTPLabs account created with key{key_index + 1}: {address}")
+                _provider_stats[key_name]["success"] += 1
+                _provider_stats[key_name]["last_success"] = time.time()
                 return data
             except httpx.HTTPStatusError as e:
                 if e.response.status_code == 429:
                     wait_time = 2 ** attempt
-                    logging.warning(f"SMTPLabs rate limited, waiting {wait_time}s (attempt {attempt + 1}/3)")
+                    logging.warning(f"SMTPLabs key{key_index + 1} rate limited, waiting {wait_time}s (attempt {attempt + 1}/3)")
                     if attempt < 2:
                         await asyncio.sleep(wait_time)
                     else:
-                        _provider_stats["smtplabs"]["failures"] += 1
-                        _provider_stats["smtplabs"]["last_failure"] = time.time()
-                        raise HTTPException(status_code=429, detail="SMTPLabs API rate limit exceeded")
+                        _provider_stats[key_name]["failures"] += 1
+                        _provider_stats[key_name]["last_failure"] = time.time()
+                        raise HTTPException(status_code=429, detail=f"SMTPLabs key{key_index + 1} rate limit exceeded")
                 else:
-                    logging.error(f"SMTPLabs error creating account: {e}")
-                    _provider_stats["smtplabs"]["failures"] += 1
-                    _provider_stats["smtplabs"]["last_failure"] = time.time()
+                    logging.error(f"SMTPLabs key{key_index + 1} error creating account: {e}")
+                    _provider_stats[key_name]["failures"] += 1
+                    _provider_stats[key_name]["last_failure"] = time.time()
                     raise HTTPException(status_code=400, detail=str(e))
             except Exception as e:
-                logging.error(f"SMTPLabs error: {e}")
-                _provider_stats["smtplabs"]["failures"] += 1
-                _provider_stats["smtplabs"]["last_failure"] = time.time()
+                logging.error(f"SMTPLabs key{key_index + 1} error: {e}")
+                _provider_stats[key_name]["failures"] += 1
+                _provider_stats[key_name]["last_failure"] = time.time()
                 raise HTTPException(status_code=400, detail=str(e))
 
 
-async def smtplabs_get_mailboxes(account_id: str):
+async def smtplabs_get_mailboxes(account_id: str, api_key: str):
     """Get mailboxes for SMTPLabs account"""
-    if not SMTPLABS_API_KEY:
+    if not api_key:
         return []
     
     async with httpx.AsyncClient(timeout=10.0) as http_client:
@@ -306,7 +323,7 @@ async def smtplabs_get_mailboxes(account_id: str):
             response = await http_client.get(
                 f"{SMTPLABS_BASE_URL}/accounts/{account_id}/mailboxes",
                 headers={
-                    "X-API-KEY": SMTPLABS_API_KEY,
+                    "X-API-KEY": api_key,
                     "Accept": "application/json"
                 }
             )
@@ -318,9 +335,9 @@ async def smtplabs_get_mailboxes(account_id: str):
             return []
 
 
-async def smtplabs_get_messages(account_id: str, mailbox_id: str):
+async def smtplabs_get_messages(account_id: str, mailbox_id: str, api_key: str):
     """Get messages from SMTPLabs mailbox"""
-    if not SMTPLABS_API_KEY:
+    if not api_key:
         return []
     
     async with httpx.AsyncClient(timeout=10.0) as http_client:
@@ -328,7 +345,7 @@ async def smtplabs_get_messages(account_id: str, mailbox_id: str):
             response = await http_client.get(
                 f"{SMTPLABS_BASE_URL}/accounts/{account_id}/mailboxes/{mailbox_id}/messages",
                 headers={
-                    "X-API-KEY": SMTPLABS_API_KEY,
+                    "X-API-KEY": api_key,
                     "Accept": "application/json"
                 }
             )
@@ -340,9 +357,9 @@ async def smtplabs_get_messages(account_id: str, mailbox_id: str):
             return []
 
 
-async def smtplabs_get_message_detail(account_id: str, mailbox_id: str, message_id: str):
+async def smtplabs_get_message_detail(account_id: str, mailbox_id: str, message_id: str, api_key: str):
     """Get message detail from SMTPLabs"""
-    if not SMTPLABS_API_KEY:
+    if not api_key:
         return None
     
     async with httpx.AsyncClient(timeout=10.0) as http_client:
