@@ -658,7 +658,7 @@ async def get_email_history(db: Session = Depends(get_db)):
 
 
 @api_router.get("/emails/history/{email_id}/messages")
-async def get_history_email_messages(email_id: str, db: Session = Depends(get_db)):
+async def get_history_email_messages(email_id: int, db: Session = Depends(get_db)):
     """Get messages for a history email"""
     email = db.query(EmailHistoryModel).filter(EmailHistoryModel.id == email_id).first()
     if not email:
@@ -671,7 +671,7 @@ async def get_history_email_messages(email_id: str, db: Session = Depends(get_db
 
 
 @api_router.get("/emails/history/{email_id}/messages/{message_id}")
-async def get_history_message_detail(email_id: str, message_id: str, db: Session = Depends(get_db)):
+async def get_history_message_detail(email_id: int, message_id: str, db: Session = Depends(get_db)):
     """Get message detail for a history email"""
     email = db.query(EmailHistoryModel).filter(EmailHistoryModel.id == email_id).first()
     if not email:
