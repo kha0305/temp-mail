@@ -555,10 +555,22 @@ agent_communication:
         • created_at (DATETIME)
         • message_count (INT)
       
-      URLs khi chạy local:
       - Frontend: http://localhost:7050 ✅ PORT 7050
       - Backend: http://localhost:8001
       - API Docs: http://localhost:8001/docs
+      
+      UPDATE 2025-01-08: MODERN UI REDESIGN
+      - ✅ Fixed Git merge conflicts in server.py, App.js, App.css, index.html
+      - ✅ Completely redesigned frontend with modern aesthetics
+      - ✅ New color scheme: Purple/Pink gradient theme
+      - ✅ Glass-morphism effects with backdrop blur
+      - ✅ Smooth animations and transitions
+      - ✅ Modern typography (Poppins + Space Grotesk fonts)
+      - ✅ Premium card designs with shadows and hover effects
+      - ✅ Gradient buttons with interactive states
+      - ✅ Improved responsive design
+      - ✅ Custom scrollbar styling
+      - ✅ Enhanced visual feedback for all interactions
       
       Hướng dẫn sử dụng:
       📖 Xem file HUONG_DAN_LOCAL.md để biết chi tiết cách:
