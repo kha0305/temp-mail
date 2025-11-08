@@ -1196,7 +1196,10 @@ async def get_services():
         "services": [
             {"id": "mailtm", "name": "Mail.tm", "description": "Free temporary email service"},
             {"id": "mailgw", "name": "Mail.gw", "description": "Free temporary email service (Mail.tm compatible)"},
-            {"id": "1secmail", "name": "1secmail", "description": "Fast temporary email service"}
+            {"id": "1secmail", "name": "1secmail", "description": "Fast temporary email service"},
+            {"id": "guerrilla", "name": "Guerrilla Mail", "description": "Anonymous temporary email"},
+            {"id": "tempmail_lol", "name": "TempMail.lol", "description": "Simple disposable email service"},
+            {"id": "dropmail", "name": "DropMail", "description": "Privacy-focused temporary email"}
         ]
     }
 
