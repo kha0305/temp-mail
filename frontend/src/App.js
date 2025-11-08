@@ -548,9 +548,10 @@ function App() {
   const viewSavedEmail = async (saved) => {
     try {
       const response = await axios.get(`${API}/emails/saved/${saved.id}`);
-      setSelectedMessage(response.data);
-      // Mark as viewing saved email
-      setCurrentEmail({ ...saved, isSaved: true });
+      setSavedMessageDetail(response.data);
+      setSelectedSavedEmail(saved);
+      setViewMode('detail');
+      setActiveTab('saved');
     } catch (error) {
       toast.error('Không thể tải email đã lưu');
     }
