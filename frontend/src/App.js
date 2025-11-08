@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import axios from 'axios';
 import { ThemeProvider } from 'next-themes';
@@ -737,22 +736,3 @@ function App() {
 }
 
 export default App;
-=======
-import "@/App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import TempMail from "./TempMail";
-
-function App() {
-  return (
-    <div className="App">
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<TempMail />} />
-        </Routes>
-      </BrowserRouter>
-    </div>
-  );
-}
-
-export default App;
->>>>>>> 9802088c29fbefbb5fe355e8fdb4e970da82d1fe
