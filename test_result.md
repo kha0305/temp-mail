@@ -133,6 +133,49 @@ user_problem_statement: |
   - Port: 3306
 
 backend:
+  - task: "Random provider selection cho chế độ auto"
+    implemented: true
+    working: true
+    file: "server.py, server_mongodb.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: |
+          ✅ Implemented random provider selection:
+          
+          Changes:
+          - Updated create_email_with_failover() function
+          - When mode = "auto": shuffle providers_to_try list
+          - Active providers: Mail.tm, Mail.gw, Guerrilla Mail (3 providers)
+          - Removed 1secmail from auto list (disabled, requires API key)
+          
+          Implementation:
+          - Line ~659 (server.py): Added random.shuffle(providers_to_try)
+          - Line ~660: Added logging "🎲 Random provider order: {list}"
+          - Line ~589 (server_mongodb.py): Same changes for consistency
+          
+          Algorithm:
+          - Fisher-Yates shuffle (Python's random.shuffle)
+          - O(n) complexity
+          - Each request gets different random order
+          
+          Testing Results:
+          - ✅ Test 1: Order = ['guerrilla', 'mailgw', 'mailtm']
+          - ✅ Test 2: Order = ['mailtm', 'mailgw', 'guerrilla']
+          - ✅ Test 3: Order = ['mailgw', 'guerrilla', 'mailtm']
+          - ✅ All providers working correctly
+          
+          Benefits:
+          - Load balancing between providers
+          - Bypass rate limits
+          - Improved reliability
+          - Better user experience
+          
+          Documentation: /app/RANDOM_PROVIDER_SELECTION.md
+  
   - task: "Fix HTML content không hiển thị"
     implemented: true
     working: true
