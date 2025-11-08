@@ -51,6 +51,17 @@ def create_database():
         print("   3. User có quyền tạo database")
         return False
 
+def drop_tables():
+    """Xóa tất cả các tables (nếu muốn reset lại từ đầu)"""
+    try:
+        print("\n⚠️  CẢNH BÁO: Đang xóa tất cả tables...")
+        Base.metadata.drop_all(bind=engine)
+        print("✅ Đã xóa tất cả tables!")
+        return True
+    except Exception as e:
+        print(f"❌ Lỗi xóa tables: {e}")
+        return False
+
 def create_tables():
     """Tạo các tables trong database"""
     try:
@@ -58,7 +69,8 @@ def create_tables():
         Base.metadata.create_all(bind=engine)
         print("✅ Tất cả tables đã được tạo thành công!")
         print("\n📊 Tables:")
-        print("   - temp_emails (id, address, password, token, account_id, created_at, message_count)")
+        print("   - temp_emails (id INT AUTO_INCREMENT, address, password, token, ...)")
+        print("   - email_history (id INT AUTO_INCREMENT, address, expired_at, ...)")
         return True
     except Exception as e:
         print(f"❌ Lỗi tạo tables: {e}")
@@ -69,12 +81,27 @@ def main():
     print("🚀 KHỞI TẠO DATABASE CHO ỨNG DỤNG TEMPMAIL")
     print("="*60)
     
+    # Kiểm tra xem có tham số --reset không
+    reset_mode = "--reset" in sys.argv or "--drop" in sys.argv
+    
     # Bước 1: Tạo database
     if not create_database():
         print("\n❌ Không thể tạo database. Vui lòng sửa lỗi và thử lại.")
         sys.exit(1)
     
-    # Bước 2: Tạo tables
+    # Bước 2: Drop tables nếu reset mode
+    if reset_mode:
+        print("\n⚠️  Chế độ RESET được kích hoạt!")
+        confirm = input("⚠️  Xóa tất cả dữ liệu và tạo lại tables? (yes/no): ")
+        if confirm.lower() in ['yes', 'y']:
+            if not drop_tables():
+                print("\n❌ Không thể xóa tables.")
+                sys.exit(1)
+        else:
+            print("❌ Hủy bỏ reset.")
+            sys.exit(0)
+    
+    # Bước 3: Tạo tables
     if not create_tables():
         print("\n❌ Không thể tạo tables. Vui lòng sửa lỗi và thử lại.")
         sys.exit(1)
@@ -82,8 +109,12 @@ def main():
     print("\n" + "="*60)
     print("✅ HOÀN THÀNH! Database đã sẵn sàng sử dụng.")
     print("="*60)
+    if reset_mode:
+        print("\n⚠️  Lưu ý: ID bây giờ là số (integer) thay vì UUID")
     print("\n💡 Bước tiếp theo: Chạy ứng dụng với lệnh:")
     print("   bash start_app.sh")
+    print("\n💡 Để reset database lần sau, chạy:")
+    print("   python init_db.py --reset")
     print()
 
 if __name__ == "__main__":
