@@ -429,27 +429,77 @@ async def get_1secmail_message_detail(username: str, domain: str, message_id: st
 
 
 # ============================================================================
-# Unified Email Creation - Mail.tm Only
+# Unified Email Creation - Multi-Service Support
 # ============================================================================
 
-async def create_email_with_fallback(username: str = None):
+async def get_available_domains():
+    """Get available domains from Mail.tm (legacy support)"""
+    domains = await get_mailtm_domains()
+    return domains[0] if domains else None
+
+
+async def get_mailtm_domains():
+    """Get available domains from Mail.tm with caching"""
+    current_time = time.time()
+    service = "mailtm"
+    
+    # Check cache first
+    if (_domain_cache[service]["domains"] and 
+        current_time - _domain_cache[service]["cached_at"] < _domain_cache[service]["ttl"]):
+        logging.info(f"Using cached Mail.tm domains")
+        return _domain_cache[service]["domains"]
+    
+    # Fetch from API
+    async with httpx.AsyncClient(timeout=10.0) as http_client:
+        try:
+            response = await http_client.get(f"{MAILTM_BASE_URL}/domains")
+            response.raise_for_status()
+            data = response.json()
+            domains = [d["domain"] for d in data.get("hydra:member", [])]
+            
+            # Update cache
+            _domain_cache[service]["domains"] = domains
+            _domain_cache[service]["cached_at"] = current_time
+            logging.info(f"Cached {len(domains)} Mail.tm domains")
+            return domains
+        except Exception as e:
+            logging.error(f"Error getting Mail.tm domains: {e}")
+            return []
+
+
+async def create_email_with_service(service: str, username: str = None, domain: str = None):
     """
-    Create email using Mail.tm (free, no API key needed)
+    Create email using specified service
     """
+    # Generate username if not provided
+    if not username:
+        username = ''.join(random.choices(string.ascii_lowercase + string.digits, k=10))
+    
+    password = ''.join(random.choices(string.ascii_letters + string.digits, k=16))
+    
+    if service == "mailtm":
+        return await create_mailtm_email(username, domain, password)
+    elif service == "mailgw":
+        return await create_mailgw_email(username, domain, password)
+    elif service == "1secmail":
+        return await create_1secmail_email(username, domain)
+    else:
+        raise HTTPException(status_code=400, detail=f"Unknown service: {service}")
+
+
+async def create_mailtm_email(username: str, domain: str = None, password: str = None):
+    """Create email on Mail.tm"""
     try:
         logging.info("🔄 Creating email via Mail.tm...")
         
-        # Get available domain
-        domain = await get_available_domains()
+        # Get domain
         if not domain:
-            raise Exception("No domains available from Mail.tm")
-        
-        # Generate username
-        if not username:
-            username = ''.join(random.choices(string.ascii_lowercase + string.digits, k=10))
+            domains = await get_mailtm_domains()
+            if not domains:
+                raise Exception("No domains available from Mail.tm")
+            domain = domains[0]
         
         address = f"{username}@{domain}"
-        password = ''.join(random.choices(string.ascii_letters + string.digits, k=16))
         
         # Create account
         account_data = await create_mailtm_account(address, password)
@@ -466,18 +516,91 @@ async def create_email_with_fallback(username: str = None):
             "password": password,
             "token": token,
             "account_id": account_data["id"],
-            "mailbox_id": None
+            "username": username,
+            "domain": domain
         }
         
     except Exception as e:
-        error_msg = str(e)
         _provider_stats["mailtm"]["failures"] += 1
         _provider_stats["mailtm"]["last_failure"] = time.time()
-        logging.error(f"❌ Mail.tm failed: {error_msg}")
-        raise HTTPException(
-            status_code=503,
-            detail=f"Mail.tm unavailable: {error_msg}"
-        )
+        logging.error(f"❌ Mail.tm failed: {e}")
+        raise HTTPException(status_code=503, detail=f"Mail.tm unavailable: {e}")
+
+
+async def create_mailgw_email(username: str, domain: str = None, password: str = None):
+    """Create email on Mail.gw"""
+    try:
+        logging.info("🔄 Creating email via Mail.gw...")
+        
+        # Get domain
+        if not domain:
+            domains = await get_mailgw_domains()
+            if not domains:
+                raise Exception("No domains available from Mail.gw")
+            domain = domains[0]
+        
+        address = f"{username}@{domain}"
+        
+        # Create account
+        account_data = await create_mailgw_account(address, password)
+        
+        # Get token
+        token = await get_mailgw_token(address, password)
+        
+        _provider_stats["mailgw"]["success"] += 1
+        logging.info(f"✅ Mail.gw email created: {address}")
+        
+        return {
+            "provider": "mailgw",
+            "address": address,
+            "password": password,
+            "token": token,
+            "account_id": account_data["id"],
+            "username": username,
+            "domain": domain
+        }
+        
+    except Exception as e:
+        _provider_stats["mailgw"]["failures"] += 1
+        _provider_stats["mailgw"]["last_failure"] = time.time()
+        logging.error(f"❌ Mail.gw failed: {e}")
+        raise HTTPException(status_code=503, detail=f"Mail.gw unavailable: {e}")
+
+
+async def create_1secmail_email(username: str, domain: str = None):
+    """Create email on 1secmail"""
+    try:
+        logging.info("🔄 Creating email via 1secmail...")
+        
+        # Get domain
+        if not domain:
+            domains = await get_1secmail_domains()
+            if not domains:
+                raise Exception("No domains available from 1secmail")
+            domain = domains[0]
+        
+        # 1secmail doesn't need account creation
+        account_data = await create_1secmail_account(username, domain)
+        address = account_data["address"]
+        
+        _provider_stats["1secmail"]["success"] += 1
+        logging.info(f"✅ 1secmail email created: {address}")
+        
+        return {
+            "provider": "1secmail",
+            "address": address,
+            "password": "",  # 1secmail doesn't use passwords
+            "token": "",  # 1secmail doesn't use tokens
+            "account_id": username,  # Use username as account_id
+            "username": username,
+            "domain": domain
+        }
+        
+    except Exception as e:
+        _provider_stats["1secmail"]["failures"] += 1
+        _provider_stats["1secmail"]["last_failure"] = time.time()
+        logging.error(f"❌ 1secmail failed: {e}")
+        raise HTTPException(status_code=503, detail=f"1secmail unavailable: {e}")
 
 
 
