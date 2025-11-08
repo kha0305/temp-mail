@@ -1133,9 +1133,12 @@ async def save_message(email_id: int, message_id: str):
                 "id": existing["id"]
             }
         
-        # Generate new ID
-        max_id_doc = await saved_collection.find_one(sort=[("id", -1)])
-        new_id = (max_id_doc["id"] + 1) if max_id_doc else 1
+        # Generate new ID using MongoDB's ObjectId or timestamp-based unique ID
+        import time
+        new_id = int(time.time() * 1000)  # Use timestamp in milliseconds as unique ID
+        
+        # Or alternatively, use a combination approach:
+        # new_id = int(f"{int(time.time())}{random.randint(1000, 9999)}")
         
         # Extract content
         html_content = None
