@@ -1301,9 +1301,12 @@ function App() {
                             <input
                               type="checkbox"
                               checked={selectedHistoryIds.includes(email.id)}
-                              onChange={() => toggleHistorySelection(email.id)}
-                              className="history-checkbox"
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                toggleHistorySelection(email.id);
+                              }}
                               onClick={(e) => e.stopPropagation()}
+                              className="history-checkbox"
                             />
                             <div 
                               className="history-info"
