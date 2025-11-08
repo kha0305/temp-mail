@@ -100,7 +100,6 @@
 
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
-<<<<<<< HEAD
 #====================================================================================================
 
 user_problem_statement: |
