@@ -122,6 +122,23 @@ user_problem_statement: |
   - Port: 3306
 
 backend:
+  - task: "Fix Git merge conflicts in backend"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: |
+          ✅ Resolved Git merge conflicts:
+          - Removed all <<<<<<< HEAD, =======, >>>>>>> markers
+          - Kept HEAD version (MySQL with expiry features)
+          - Used Python script to automatically resolve conflicts
+          - Verified syntax with py_compile
+  
   - task: "Chuyển đổi database từ MongoDB sang MySQL"
     implemented: true
     working: "NA"
