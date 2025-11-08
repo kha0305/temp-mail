@@ -87,14 +87,13 @@ async def background_task_loop():
 
 def start_background_tasks():
     """Start background tasks in a separate thread"""
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
+    import threading
     
-    # Run the background task
     def run_loop():
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
         loop.run_until_complete(background_task_loop())
     
-    import threading
     thread = threading.Thread(target=run_loop, daemon=True)
     thread.start()
     
