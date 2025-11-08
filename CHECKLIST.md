@@ -206,8 +206,8 @@ cat backend/.env | grep PASSWORD
 # Kill port 8001
 lsof -ti:8001 | xargs kill -9
 
-# Kill port 3000
-lsof -ti:3000 | xargs kill -9
+# Kill port 7050
+lsof -ti:7050 | xargs kill -9
 ```
 
 ### Lỗi: Table doesn't exist
