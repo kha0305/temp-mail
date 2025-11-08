@@ -514,8 +514,7 @@ function App() {
       'mailgw': 'Mail.gw',
       '1secmail': '1secmail',
       'guerrilla': 'Guerrilla Mail',
-      'tempmail_lol': 'TempMail.lol',
-      'dropmail': 'DropMail'
+      'tempmail_lol': 'TempMail.lol'
     };
     return serviceMap[provider] || provider;
   };
