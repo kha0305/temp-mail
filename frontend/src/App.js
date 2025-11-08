@@ -497,11 +497,18 @@ function App() {
 
   const toggleHistorySelection = (emailId) => {
     setSelectedHistoryIds(prev => {
-      if (prev.includes(emailId)) {
-        return prev.filter(id => id !== emailId);
-      } else {
-        return [...prev, emailId];
-      }
+      // Prevent duplicate selections
+      const newSelection = prev.includes(emailId)
+        ? prev.filter(id => id !== emailId)
+        : [...prev, emailId];
+      
+      console.log('Toggle History Selection:', {
+        emailId,
+        prevSelected: prev,
+        newSelected: newSelection
+      });
+      
+      return newSelection;
     });
   };
 
