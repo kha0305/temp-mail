@@ -33,7 +33,23 @@ api_router = APIRouter(prefix="/api")
 # Email Provider Configuration
 MAILTM_BASE_URL = "https://api.mail.tm"
 SMTPLABS_BASE_URL = "https://api.smtp.dev"
-SMTPLABS_API_KEY = os.environ.get('SMTPLABS_API_KEY', '')
+
+# Multiple SMTP Labs API Keys for load balancing and failover
+SMTPLABS_API_KEYS = []
+for i in range(1, 10):  # Support up to 9 keys
+    key = os.environ.get(f'SMTPLABS_API_KEY_{i}', '').strip()
+    if key:
+        SMTPLABS_API_KEYS.append(key)
+        logging.info(f"✅ Loaded SMTPLABS_API_KEY_{i}")
+
+# Fallback to old single key format for backward compatibility
+if not SMTPLABS_API_KEYS:
+    old_key = os.environ.get('SMTPLABS_API_KEY', '').strip()
+    if old_key:
+        SMTPLABS_API_KEYS.append(old_key)
+        logging.info("✅ Loaded legacy SMTPLABS_API_KEY")
+
+logging.info(f"📧 SMTPLabs: {len(SMTPLABS_API_KEYS)} API key(s) loaded")
 
 # Rate limiting tracking (in-memory)
 # In production, use Redis or database
@@ -50,11 +66,22 @@ _domain_cache = {
     "ttl": 300  # Cache for 5 minutes
 }
 
-# Provider tracking for fallback
+# Provider tracking for fallback (per key)
 _provider_stats = {
-    "mailtm": {"success": 0, "failures": 0, "last_failure": 0},
-    "smtplabs": {"success": 0, "failures": 0, "last_failure": 0}
+    "mailtm": {"success": 0, "failures": 0, "last_failure": 0}
 }
+
+# Initialize stats for each SMTP key
+for i, key in enumerate(SMTPLABS_API_KEYS, 1):
+    _provider_stats[f"smtplabs_key{i}"] = {
+        "success": 0, 
+        "failures": 0, 
+        "last_failure": 0,
+        "last_success": 0
+    }
+
+# Track current key index for round-robin
+_current_smtp_key_index = 0
 
 
 # Pydantic Models
