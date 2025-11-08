@@ -47,6 +47,16 @@ function ThemeToggle() {
 }
 
 function App() {
+  // Random hero titles
+  const heroTitles = [
+    "Email tạm thời của bạn",
+    "Địa chỉ email 10 phút",
+    "Email dùng một lần",
+    "Hộp thư tức thời của bạn",
+    "Email ảo an toàn"
+  ];
+  const [heroTitle] = useState(() => heroTitles[Math.floor(Math.random() * heroTitles.length)]);
+  
   const [currentEmail, setCurrentEmail] = useState(null);
   const [historyEmails, setHistoryEmails] = useState([]);
   const [savedEmails, setSavedEmails] = useState([]);
