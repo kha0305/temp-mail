@@ -121,9 +121,9 @@ PORT=7050 yarn start
 - Tìm và kill process: `lsof -ti:8001 | xargs kill -9`
 - Hoặc đổi port trong uvicorn command
 
-### Lỗi: "Port 3000 already in use"
-- Tìm và kill process: `lsof -ti:3000 | xargs kill -9`
-- Hoặc chạy: `PORT=7050 yarn start`
+### Lỗi: "Port 7050 already in use"
+- Tìm và kill process: `lsof -ti:7050 | xargs kill -9`
+- Hoặc chạy với port khác: `PORT=3000 yarn start`
 
 ## Database Schema
 
