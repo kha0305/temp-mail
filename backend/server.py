@@ -230,6 +230,202 @@ async def get_mailtm_message_detail(token: str, message_id: str):
             return None
 
 
+# ============================================================================
+# Mail.gw Service Functions (Compatible with Mail.tm API)
+# ============================================================================
+
+async def get_mailgw_domains():
+    """Get available domains from Mail.gw with caching"""
+    current_time = time.time()
+    service = "mailgw"
+    
+    # Check cache first
+    if (_domain_cache[service]["domains"] and 
+        current_time - _domain_cache[service]["cached_at"] < _domain_cache[service]["ttl"]):
+        logging.info(f"Using cached Mail.gw domains")
+        return _domain_cache[service]["domains"]
+    
+    # Fetch from API
+    async with httpx.AsyncClient(timeout=10.0) as http_client:
+        try:
+            response = await http_client.get(f"{MAILGW_BASE_URL}/domains")
+            response.raise_for_status()
+            data = response.json()
+            domains = [d["domain"] for d in data.get("hydra:member", [])]
+            
+            # Update cache
+            _domain_cache[service]["domains"] = domains
+            _domain_cache[service]["cached_at"] = current_time
+            logging.info(f"Cached {len(domains)} Mail.gw domains")
+            return domains
+        except Exception as e:
+            logging.error(f"Error getting Mail.gw domains: {e}")
+            return []
+
+
+async def create_mailgw_account(address: str, password: str):
+    """Create account on Mail.gw (API compatible with Mail.tm)"""
+    async with httpx.AsyncClient(timeout=10.0) as http_client:
+        try:
+            response = await http_client.post(
+                f"{MAILGW_BASE_URL}/accounts",
+                json={"address": address, "password": password}
+            )
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            logging.error(f"Error creating Mail.gw account: {e}")
+            raise HTTPException(status_code=400, detail=str(e))
+
+
+async def get_mailgw_token(address: str, password: str):
+    """Get authentication token from Mail.gw"""
+    async with httpx.AsyncClient(timeout=10.0) as http_client:
+        try:
+            response = await http_client.post(
+                f"{MAILGW_BASE_URL}/token",
+                json={"address": address, "password": password}
+            )
+            response.raise_for_status()
+            return response.json()["token"]
+        except Exception as e:
+            logging.error(f"Error getting Mail.gw token: {e}")
+            raise HTTPException(status_code=400, detail=str(e))
+
+
+async def get_mailgw_messages(token: str):
+    """Get messages from Mail.gw"""
+    async with httpx.AsyncClient(timeout=10.0) as http_client:
+        try:
+            response = await http_client.get(
+                f"{MAILGW_BASE_URL}/messages",
+                headers={"Authorization": f"Bearer {token}"}
+            )
+            response.raise_for_status()
+            data = response.json()
+            return data.get("hydra:member", [])
+        except Exception as e:
+            logging.error(f"Error getting Mail.gw messages: {e}")
+            return []
+
+
+async def get_mailgw_message_detail(token: str, message_id: str):
+    """Get message detail from Mail.gw"""
+    async with httpx.AsyncClient(timeout=10.0) as http_client:
+        try:
+            response = await http_client.get(
+                f"{MAILGW_BASE_URL}/messages/{message_id}",
+                headers={"Authorization": f"Bearer {token}"}
+            )
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            logging.error(f"Error getting Mail.gw message detail: {e}")
+            return None
+
+
+# ============================================================================
+# 1secmail Service Functions
+# ============================================================================
+
+async def get_1secmail_domains():
+    """Get available domains from 1secmail with caching"""
+    current_time = time.time()
+    service = "1secmail"
+    
+    # Check cache first
+    if (_domain_cache[service]["domains"] and 
+        current_time - _domain_cache[service]["cached_at"] < _domain_cache[service]["ttl"]):
+        logging.info(f"Using cached 1secmail domains")
+        return _domain_cache[service]["domains"]
+    
+    # Fetch from API
+    async with httpx.AsyncClient(timeout=10.0) as http_client:
+        try:
+            response = await http_client.get(f"{ONESECMAIL_BASE_URL}/?action=getDomainList")
+            response.raise_for_status()
+            domains = response.json()
+            
+            # Update cache
+            _domain_cache[service]["domains"] = domains
+            _domain_cache[service]["cached_at"] = current_time
+            logging.info(f"Cached {len(domains)} 1secmail domains")
+            return domains
+        except Exception as e:
+            logging.error(f"Error getting 1secmail domains: {e}")
+            return []
+
+
+async def create_1secmail_account(username: str, domain: str):
+    """Create/use email on 1secmail (no actual account creation needed)"""
+    # 1secmail doesn't require account creation - emails just exist
+    address = f"{username}@{domain}"
+    return {
+        "address": address,
+        "username": username,
+        "domain": domain
+    }
+
+
+async def get_1secmail_messages(username: str, domain: str):
+    """Get messages from 1secmail"""
+    async with httpx.AsyncClient(timeout=10.0) as http_client:
+        try:
+            response = await http_client.get(
+                f"{ONESECMAIL_BASE_URL}/?action=getMessages&login={username}&domain={domain}"
+            )
+            response.raise_for_status()
+            messages = response.json()
+            
+            # Transform to match Mail.tm format
+            transformed = []
+            for msg in messages:
+                transformed.append({
+                    "id": str(msg["id"]),
+                    "from": {
+                        "address": msg.get("from", ""),
+                        "name": msg.get("from", "")
+                    },
+                    "subject": msg.get("subject", ""),
+                    "createdAt": msg.get("date", "")
+                })
+            
+            return transformed
+        except Exception as e:
+            logging.error(f"Error getting 1secmail messages: {e}")
+            return []
+
+
+async def get_1secmail_message_detail(username: str, domain: str, message_id: str):
+    """Get message detail from 1secmail"""
+    async with httpx.AsyncClient(timeout=10.0) as http_client:
+        try:
+            response = await http_client.get(
+                f"{ONESECMAIL_BASE_URL}/?action=readMessage&login={username}&domain={domain}&id={message_id}"
+            )
+            response.raise_for_status()
+            msg = response.json()
+            
+            # Transform to match Mail.tm format
+            transformed = {
+                "id": str(msg.get("id", message_id)),
+                "from": {
+                    "address": msg.get("from", ""),
+                    "name": msg.get("from", "")
+                },
+                "to": [{"address": msg.get("to", "")}],
+                "subject": msg.get("subject", ""),
+                "createdAt": msg.get("date", ""),
+                "text": [msg.get("textBody", "")],
+                "html": [msg.get("htmlBody", "")]
+            }
+            
+            return transformed
+        except Exception as e:
+            logging.error(f"Error getting 1secmail message detail: {e}")
+            return None
+
+
 
 
 # ============================================================================
