@@ -732,12 +732,14 @@ async def create_email(request: CreateEmailRequest, db: Session = Depends(get_db
         db.commit()
         db.refresh(email)
         
-        return CreateEmailResponse(
-            id=email.id,
-            address=email.address,
-            created_at=email.created_at,
-            expires_at=email.expires_at
-        )
+        return {
+            "id": email.id,
+            "address": email.address,
+            "created_at": email.created_at,
+            "expires_at": email.expires_at,
+            "provider": email.provider,
+            "service_name": AVAILABLE_SERVICES.get(email.provider, {}).get("name", email.provider)
+        }
     except Exception as e:
         logging.error(f"Error creating email: {e}")
         db.rollback()
