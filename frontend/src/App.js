@@ -781,6 +781,9 @@ function App() {
                             <option value="mailtm">Mail.tm</option>
                             <option value="mailgw">Mail.gw</option>
                             <option value="1secmail">1secmail</option>
+                            <option value="guerrilla">Guerrilla Mail</option>
+                            <option value="tempmail_lol">TempMail.lol</option>
+                            <option value="dropmail">DropMail</option>
                           </select>
                         </div>
                         <div className="form-group">
