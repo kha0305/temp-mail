@@ -13,7 +13,7 @@ Có 2 môi trường khác nhau:
 **Supervisor Config (READONLY):**
 ```
 Port: 3000 (hardcoded)
-URL: https://ui-backend-repair.preview.emergentagent.com
+URL: https://custom-domain-fix-1.preview.emergentagent.com
 ```
 
 ⚠️ **File `/etc/supervisor/conf.d/supervisord.conf` là READONLY**

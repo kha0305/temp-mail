@@ -5,7 +5,7 @@ import requests
 import time
 from datetime import datetime, timezone, timedelta
 
-BASE_URL = "https://ui-backend-repair.preview.emergentagent.com"
+BASE_URL = "https://custom-domain-fix-1.preview.emergentagent.com"
 API_URL = f"{BASE_URL}/api"
 
 def test_history_flow():
