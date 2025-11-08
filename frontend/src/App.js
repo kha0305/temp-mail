@@ -606,9 +606,9 @@ function App() {
                             >
                               <option value="auto">Tự động (Tất cả dịch vụ)</option>
                               <option value="mailtm">Mail.tm</option>
+                              <option value="1secmail">1secmail</option>
                               <option value="mailgw">Mail.gw</option>
                               <option value="guerrilla">Guerrilla Mail</option>
-                              {/* <option value="1secmail">1secmail (Disabled - Requires API Key)</option> */}
                             </select>
                           </div>
                           <div className="form-group">
