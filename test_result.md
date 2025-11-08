@@ -103,6 +103,11 @@
 #====================================================================================================
 
 user_problem_statement: |
+  UPDATE 2025-11-08:
+  ✅ SỬA LỖI HTML CONTENT KHÔNG HIỂN THỊ - HOÀN THÀNH
+  1. ✅ Fix lỗi HTML/text content không hiển thị cho tất cả providers (Mail.tm, Mail.gw, Guerrilla)
+  2. ⏳ Tích hợp etempmail.com để lấy edu mail - PENDING (etempmail.com không có API công khai)
+  
   UPDATE 2025-01-08:
   ✅ Sửa lỗi Git merge conflicts trong code
   ✅ Làm lại giao diện hiện đại hơn với thiết kế mới
