@@ -1093,6 +1093,95 @@ async def create_1secmail_email(username: str, domain: str = None):
         raise HTTPException(status_code=503, detail=f"1secmail unavailable: {e}")
 
 
+async def create_guerrilla_email(username: str = None, domain: str = None):
+    """Create email on Guerrilla Mail"""
+    try:
+        logging.info("🔄 Creating email via Guerrilla Mail...")
+        
+        # Create account
+        account_data = await create_guerrilla_account(username, domain)
+        address = account_data["address"]
+        sid_token = account_data["sid_token"]
+        
+        _provider_stats["guerrilla"]["success"] += 1
+        logging.info(f"✅ Guerrilla Mail email created: {address}")
+        
+        return {
+            "provider": "guerrilla",
+            "address": address,
+            "password": "",  # Guerrilla doesn't use passwords
+            "token": sid_token,  # Use sid_token as token
+            "account_id": sid_token,  # Use sid_token as account_id
+            "username": account_data["username"],
+            "domain": account_data["domain"]
+        }
+        
+    except Exception as e:
+        _provider_stats["guerrilla"]["failures"] += 1
+        _provider_stats["guerrilla"]["last_failure"] = time.time()
+        logging.error(f"❌ Guerrilla Mail failed: {e}")
+        raise HTTPException(status_code=503, detail=f"Guerrilla Mail unavailable: {e}")
+
+
+async def create_tempmail_lol_email(username: str = None, domain: str = None):
+    """Create email on TempMail.lol"""
+    try:
+        logging.info("🔄 Creating email via TempMail.lol...")
+        
+        # Create account
+        account_data = await create_tempmail_lol_account(username, domain)
+        address = account_data["address"]
+        
+        _provider_stats["tempmail_lol"]["success"] += 1
+        logging.info(f"✅ TempMail.lol email created: {address}")
+        
+        return {
+            "provider": "tempmail_lol",
+            "address": address,
+            "password": "",  # TempMail.lol doesn't use passwords
+            "token": account_data["token"],  # Use address as token
+            "account_id": address,  # Use address as account_id
+            "username": account_data["username"],
+            "domain": account_data["domain"]
+        }
+        
+    except Exception as e:
+        _provider_stats["tempmail_lol"]["failures"] += 1
+        _provider_stats["tempmail_lol"]["last_failure"] = time.time()
+        logging.error(f"❌ TempMail.lol failed: {e}")
+        raise HTTPException(status_code=503, detail=f"TempMail.lol unavailable: {e}")
+
+
+async def create_dropmail_email(username: str = None, domain: str = None):
+    """Create email on DropMail"""
+    try:
+        logging.info("🔄 Creating email via DropMail...")
+        
+        # Create account
+        account_data = await create_dropmail_account(username, domain)
+        address = account_data["address"]
+        session_id = account_data["session_id"]
+        
+        _provider_stats["dropmail"]["success"] += 1
+        logging.info(f"✅ DropMail email created: {address}")
+        
+        return {
+            "provider": "dropmail",
+            "address": address,
+            "password": "",  # DropMail doesn't use passwords
+            "token": session_id,  # Use session_id as token
+            "account_id": session_id,  # Use session_id as account_id
+            "username": account_data["username"],
+            "domain": account_data["domain"]
+        }
+        
+    except Exception as e:
+        _provider_stats["dropmail"]["failures"] += 1
+        _provider_stats["dropmail"]["last_failure"] = time.time()
+        logging.error(f"❌ DropMail failed: {e}")
+        raise HTTPException(status_code=503, detail=f"DropMail unavailable: {e}")
+
+
 
 # API Routes
 @api_router.get("/")
