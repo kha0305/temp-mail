@@ -5,6 +5,18 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 const TempMail = () => {
+  // Random hero titles
+  const heroTitles = [
+    "Email tạm thời của bạn",
+    "Địa chỉ email 10 phút",
+    "Email dùng một lần",
+    "Hộp thư tức thời của bạn",
+    "Email ảo an toàn",
+    "Email nhanh và tiện lợi",
+    "Hộp thư ẩn danh"
+  ];
+  const [heroTitle] = useState(() => heroTitles[Math.floor(Math.random() * heroTitles.length)]);
+  
   const [activeTab, setActiveTab] = useState('current');
   const [domains, setDomains] = useState([]);
   const [selectedService, setSelectedService] = useState('mail.tm');
