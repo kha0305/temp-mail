@@ -141,15 +141,22 @@ h1, h2, h3, h4, h5, h6 {
   animation: float 8s ease-in-out infinite;
 }
 
-/* Header */
+/* Modern Glass Header */
 .app-header-new {
-  background: var(--bg-secondary);
-  border-bottom: 1px solid var(--border);
-  padding: 1rem 2rem;
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid var(--glass-border);
+  padding: 1.2rem 2rem;
   position: sticky;
   top: 0;
   z-index: 50;
-  box-shadow: 0 1px 3px var(--shadow);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.app-header-new:hover {
+  box-shadow: var(--shadow-md);
 }
 
 .header-content-new {
@@ -163,14 +170,27 @@ h1, h2, h3, h4, h5, h6 {
 .logo-section {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  color: var(--accent);
+  gap: 0.875rem;
+  transition: transform 0.3s ease;
+}
+
+.logo-section:hover {
+  transform: scale(1.05);
+}
+
+.logo-section svg {
+  color: var(--accent-primary);
+  filter: drop-shadow(0 2px 8px rgba(139, 92, 246, 0.3));
 }
 
 .logo-text {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text-primary);
+  font-size: 1.75rem;
+  font-weight: 800;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.02em;
 }
 
 /* Main Content */
