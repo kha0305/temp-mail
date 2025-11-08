@@ -1214,6 +1214,12 @@ async def get_domains(service: str = "mailtm"):
             domains = await get_mailgw_domains()
         elif service == "1secmail":
             domains = await get_1secmail_domains()
+        elif service == "guerrilla":
+            domains = await get_guerrilla_domains()
+        elif service == "tempmail_lol":
+            domains = await get_tempmail_lol_domains()
+        elif service == "dropmail":
+            domains = await get_dropmail_domains()
         else:
             raise HTTPException(status_code=400, detail=f"Unknown service: {service}")
         
