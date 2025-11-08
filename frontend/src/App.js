@@ -835,6 +835,15 @@ function App() {
                         <Trash2 className="h-5 w-5 mr-2" />
                         Xóa
                       </Button>
+                      <Button
+                        onClick={saveCurrentEmail}
+                        className="action-btn action-btn-save"
+                        variant="default"
+                        disabled={loading || currentEmail?.isHistory}
+                      >
+                        <Bookmark className="h-5 w-5 mr-2" />
+                        Lưu
+                      </Button>
                     </div>
                   </div>
 
