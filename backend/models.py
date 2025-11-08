@@ -79,3 +79,44 @@ class EmailHistory(Base):
             "expired_at": expired_at.isoformat(),
             "message_count": self.message_count
         }
+
+
+class SavedEmail(Base):
+    """Store saved/bookmarked emails"""
+    __tablename__ = "saved_emails"
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    email_address = Column(String(255), nullable=False, index=True)  # Which email received this
+    message_id = Column(String(255), nullable=False)  # Original message ID
+    subject = Column(String(500), nullable=True)
+    from_address = Column(String(255), nullable=True)
+    from_name = Column(String(255), nullable=True)
+    html = Column(Text, nullable=True)  # HTML content
+    text = Column(Text, nullable=True)  # Text content
+    created_at = Column(DateTime, nullable=False)  # When message was created
+    saved_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)  # When saved
+    
+    def to_dict(self):
+        """Convert model to dictionary"""
+        created_at = self.created_at
+        if created_at.tzinfo is None:
+            created_at = created_at.replace(tzinfo=timezone.utc)
+        
+        saved_at = self.saved_at
+        if saved_at.tzinfo is None:
+            saved_at = saved_at.replace(tzinfo=timezone.utc)
+        
+        return {
+            "id": self.id,
+            "email_address": self.email_address,
+            "message_id": self.message_id,
+            "subject": self.subject,
+            "from": {
+                "address": self.from_address,
+                "name": self.from_name
+            },
+            "html": [self.html] if self.html else [],
+            "text": [self.text] if self.text else [],
+            "createdAt": created_at.isoformat(),
+            "saved_at": saved_at.isoformat()
+        }
