@@ -647,19 +647,16 @@ async def create_email_with_failover(username: Optional[str] = None, preferred_s
     password = ''.join(random.choices(string.ascii_letters + string.digits, k=16))
     
     # Define provider priority based on preferred_service
-    # NOTE: 1secmail disabled due to API authentication requirement (2025-01-08)
     if preferred_service == "mailtm":
         providers_to_try = ["mailtm"]
     elif preferred_service == "1secmail":
-        # 1secmail is no longer available - fallback to auto
-        logging.warning("⚠️ 1secmail is disabled (requires API key). Falling back to auto mode.")
-        providers_to_try = ["mailtm", "mailgw", "guerrilla"]
+        providers_to_try = ["1secmail"]
     elif preferred_service == "mailgw":
         providers_to_try = ["mailgw"]
     elif preferred_service == "guerrilla":
         providers_to_try = ["guerrilla"]
     else:  # auto
-        providers_to_try = ["mailtm", "mailgw", "guerrilla"]  # Removed 1secmail
+        providers_to_try = ["mailtm", "1secmail", "mailgw", "guerrilla"]
     
     errors = []
     
@@ -719,27 +716,27 @@ async def create_email_with_failover(username: Optional[str] = None, preferred_s
                     "domain": domain
                 }
             
-            # 1secmail provider removed - API requires authentication (2025-01-08)
-            # elif provider == "1secmail":
-            #     domains = await get_1secmail_domains()
-            #     if not domains:
-            #         continue
-            #     domain = preferred_domain if preferred_domain in domains else domains[0]
-            #     account_data = await create_1secmail_account(username, domain)
-            #     
-            #     _provider_stats[provider]["success"] += 1
-            #     logging.info(f"✅ 1secmail email created: {account_data['address']}")
-            #     
-            #     return {
-            #         "address": account_data["address"],
-            #         "password": account_data["password"],
-            #         "token": account_data["token"],
-            #         "account_id": account_data["account_id"],
-            #         "provider": "1secmail",
-            #         "service_name": "1secmail",
-            #         "username": username,
-            #         "domain": domain
-            #     }
+            elif provider == "1secmail":
+                domains = await get_1secmail_domains()
+                if not domains:
+                    continue
+                domain = preferred_domain if preferred_domain in domains else domains[0]
+                account_data = await create_1secmail_account(username, domain)
+                
+                clear_provider_cooldown(provider)
+                _provider_stats[provider]["success"] += 1
+                logging.info(f"✅ 1secmail email created: {account_data['address']}")
+                
+                return {
+                    "address": account_data["address"],
+                    "password": account_data["password"],
+                    "token": account_data["token"],
+                    "account_id": account_data["account_id"],
+                    "provider": "1secmail",
+                    "service_name": "1secmail",
+                    "username": username,
+                    "domain": domain
+                }
             
             elif provider == "guerrilla":
                 domains = await get_guerrilla_domains()
@@ -748,6 +745,7 @@ async def create_email_with_failover(username: Optional[str] = None, preferred_s
                 domain = preferred_domain if preferred_domain in domains else domains[0]
                 account_data = await create_guerrilla_account(username, domain)
                 
+                clear_provider_cooldown(provider)
                 _provider_stats[provider]["success"] += 1
                 logging.info(f"✅ Guerrilla email created: {account_data['address']}")
                 
