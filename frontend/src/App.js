@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import { Toaster } from '@/components/ui/sonner';
 import { 
   Mail, Copy, Trash2, RefreshCw, Sun, Moon, 
-  Clock, Edit, Inbox, History
+  Clock, Edit, Inbox, History, Server
 } from 'lucide-react';
 import './App.css';
 
@@ -53,10 +53,39 @@ function App() {
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(0); // Calculated from expires_at
+  const [timeLeft, setTimeLeft] = useState(0);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [activeTab, setActiveTab] = useState('current');
   const [selectedHistoryIds, setSelectedHistoryIds] = useState([]);
+  
+  // Service & Domain selection
+  const [selectedService, setSelectedService] = useState('mailtm'); // Default: Mail.tm
+  const [availableDomains, setAvailableDomains] = useState([]);
+  const [selectedDomain, setSelectedDomain] = useState('');
+  const [loadingDomains, setLoadingDomains] = useState(false);
+  const [showServiceForm, setShowServiceForm] = useState(false);
+
+  // Load services and domains
+  useEffect(() => {
+    loadDomainsForService(selectedService);
+  }, [selectedService]);
+
+  const loadDomainsForService = async (service) => {
+    setLoadingDomains(true);
+    try {
+      const response = await axios.get(`${API}/domains?service=${service}`);
+      const domains = response.data.domains || [];
+      setAvailableDomains(domains);
+      if (domains.length > 0) {
+        setSelectedDomain(domains[0]); // Select first domain by default
+      }
+    } catch (error) {
+      console.error('Error loading domains:', error);
+      toast.error('Không thể tải domains');
+    } finally {
+      setLoadingDomains(false);
+    }
+  };
 
   // Load emails on mount and auto-create if no email exists
   useEffect(() => {
@@ -79,10 +108,12 @@ function App() {
             console.error('Error loading initial messages:', err);
           }
         } else {
-          // No emails exist, auto-create one
+          // No emails exist, auto-create one with default service
           toast.info('Đang tạo email mới...');
           try {
-            const createResponse = await axios.post(`${API}/emails/create`, {});
+            const createResponse = await axios.post(`${API}/emails/create`, {
+              service: selectedService
+            });
             const newEmail = createResponse.data;
             
             setCurrentEmail(newEmail);
@@ -90,7 +121,7 @@ function App() {
             setSelectedMessage(null);
             
             toast.success('Email mới đã được tạo!', {
-              description: newEmail.address
+              description: `${newEmail.address} (${newEmail.service_name || newEmail.provider})`
             });
           } catch (createErr) {
             toast.error('Không thể tạo email mới', {
@@ -111,14 +142,16 @@ function App() {
         // If error getting emails, try to create one anyway
         try {
           toast.info('Đang tạo email mới...');
-          const createResponse = await axios.post(`${API}/emails/create`, {});
+          const createResponse = await axios.post(`${API}/emails/create`, {
+            service: selectedService
+          });
           const newEmail = createResponse.data;
           
           setCurrentEmail(newEmail);
           setMessages([]);
           
           toast.success('Email mới đã được tạo!', {
-            description: newEmail.address
+            description: `${newEmail.address} (${newEmail.service_name || newEmail.provider})`
           });
         } catch (createErr) {
           toast.error('Không thể khởi tạo ứng dụng');
@@ -148,7 +181,9 @@ function App() {
             toast.info('Email đã hết hạn, đang tạo email mới...');
             
             try {
-              const response = await axios.post(`${API}/emails/create`, {});
+              const response = await axios.post(`${API}/emails/create`, {
+                service: selectedService
+              });
               const newEmail = response.data;
               
               setCurrentEmail(newEmail);
@@ -156,7 +191,7 @@ function App() {
               setSelectedMessage(null);
               
               toast.success('Email mới đã được tạo!', {
-                description: newEmail.address
+                description: `${newEmail.address} (${newEmail.service_name || newEmail.provider})`
               });
               
               // Reload history
@@ -184,7 +219,7 @@ function App() {
       const timer = setInterval(updateTimer, 1000);
       return () => clearInterval(timer);
     }
-  }, [currentEmail]);
+  }, [currentEmail, selectedService]);
 
   // Auto refresh messages
   useEffect(() => {
@@ -235,15 +270,25 @@ function App() {
   const createNewEmail = async () => {
     setLoading(true);
     try {
-      const response = await axios.post(`${API}/emails/create`, {});
+      const payload = {
+        service: selectedService
+      };
+      
+      // Only include domain if a specific one is selected
+      if (selectedDomain && selectedDomain !== availableDomains[0]) {
+        payload.domain = selectedDomain;
+      }
+      
+      const response = await axios.post(`${API}/emails/create`, payload);
       const newEmail = response.data;
       
       setCurrentEmail(newEmail);
       setMessages([]);
       setSelectedMessage(null);
+      setShowServiceForm(false); // Hide form after creation
       
       toast.success('Email mới đã được tạo!', {
-        description: newEmail.address
+        description: `${newEmail.address} (${newEmail.service_name || newEmail.provider})`
       });
       
       // Reload history in case old email was moved there
@@ -435,6 +480,15 @@ function App() {
     return `${diffDays} ngày trước`;
   };
 
+  const getServiceDisplayName = (provider) => {
+    const serviceMap = {
+      'mailtm': 'Mail.tm',
+      'mailgw': 'Mail.gw',
+      '1secmail': '1secmail'
+    };
+    return serviceMap[provider] || provider;
+  };
+
   return (
     <ThemeProvider attribute="class" defaultTheme="dark">
       <div className="app-container">
@@ -495,7 +549,52 @@ function App() {
                           </Button>
                         </div>
                       </div>
+                      {/* Service Badge */}
+                      {currentEmail.provider && (
+                        <div className="service-badge">
+                          <Server className="h-3 w-3" />
+                          {getServiceDisplayName(currentEmail.provider)}
+                        </div>
+                      )}
                     </div>
+
+                    {/* Service Selection Form (Toggle) */}
+                    {showServiceForm && (
+                      <div className="service-selection-form">
+                        <div className="form-row">
+                          <div className="form-group">
+                            <label className="form-label">Dịch vụ email</label>
+                            <select
+                              className="form-select"
+                              value={selectedService}
+                              onChange={(e) => setSelectedService(e.target.value)}
+                              disabled={loading}
+                            >
+                              <option value="mailtm">Mail.tm</option>
+                              <option value="mailgw">Mail.gw</option>
+                              <option value="1secmail">1secmail</option>
+                            </select>
+                          </div>
+                          <div className="form-group">
+                            <label className="form-label">Domain</label>
+                            <select
+                              className="form-select"
+                              value={selectedDomain}
+                              onChange={(e) => setSelectedDomain(e.target.value)}
+                              disabled={loading || loadingDomains}
+                            >
+                              {loadingDomains ? (
+                                <option>Đang tải...</option>
+                              ) : (
+                                availableDomains.map(domain => (
+                                  <option key={domain} value={domain}>{domain}</option>
+                                ))
+                              )}
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Action Buttons */}
                     <div className="action-buttons-group">
@@ -509,14 +608,29 @@ function App() {
                         Làm mới 10 phút
                       </Button>
                       <Button
-                        onClick={createNewEmail}
+                        onClick={() => {
+                          if (showServiceForm) {
+                            createNewEmail();
+                          } else {
+                            setShowServiceForm(true);
+                          }
+                        }}
                         className="action-btn"
                         variant="outline"
                         disabled={loading}
                       >
                         <Edit className="h-5 w-5 mr-2" />
-                        Thay đổi
+                        {showServiceForm ? 'Tạo email' : 'Thay đổi'}
                       </Button>
+                      {showServiceForm && (
+                        <Button
+                          onClick={() => setShowServiceForm(false)}
+                          className="action-btn"
+                          variant="outline"
+                        >
+                          Hủy
+                        </Button>
+                      )}
                       <Button
                         onClick={deleteCurrentEmail}
                         className="action-btn action-btn-danger"
@@ -641,10 +755,56 @@ function App() {
                   <Mail className="empty-icon-large" />
                   <h3 className="empty-title-large">Chưa có email nào</h3>
                   <p className="empty-description-large">Tạo email mới để bắt đầu</p>
-                  <Button onClick={createNewEmail} disabled={loading} className="create-btn-large">
+                  <Button onClick={() => setShowServiceForm(true)} disabled={loading} className="create-btn-large">
                     <Mail className="h-5 w-5 mr-2" />
                     Tạo email mới
                   </Button>
+                  
+                  {/* Service Selection Form */}
+                  {showServiceForm && (
+                    <div className="service-selection-form" style={{marginTop: '2rem', maxWidth: '500px'}}>
+                      <div className="form-row">
+                        <div className="form-group">
+                          <label className="form-label">Dịch vụ email</label>
+                          <select
+                            className="form-select"
+                            value={selectedService}
+                            onChange={(e) => setSelectedService(e.target.value)}
+                            disabled={loading}
+                          >
+                            <option value="mailtm">Mail.tm</option>
+                            <option value="mailgw">Mail.gw</option>
+                            <option value="1secmail">1secmail</option>
+                          </select>
+                        </div>
+                        <div className="form-group">
+                          <label className="form-label">Domain</label>
+                          <select
+                            className="form-select"
+                            value={selectedDomain}
+                            onChange={(e) => setSelectedDomain(e.target.value)}
+                            disabled={loading || loadingDomains}
+                          >
+                            {loadingDomains ? (
+                              <option>Đang tải...</option>
+                            ) : (
+                              availableDomains.map(domain => (
+                                <option key={domain} value={domain}>{domain}</option>
+                              ))
+                            )}
+                          </select>
+                        </div>
+                      </div>
+                      <div style={{marginTop: '1rem', display: 'flex', gap: '0.5rem'}}>
+                        <Button onClick={createNewEmail} disabled={loading} className="create-btn-large" style={{flex: 1}}>
+                          Tạo email
+                        </Button>
+                        <Button onClick={() => setShowServiceForm(false)} variant="outline" style={{flex: 1}}>
+                          Hủy
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </TabsContent>
