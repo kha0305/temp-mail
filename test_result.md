@@ -103,7 +103,13 @@
 #====================================================================================================
 
 user_problem_statement: |
-  UPDATE 2025-11-08:
+  UPDATE 2025-11-08 (Latest):
+  ✅ RANDOM PROVIDER SELECTION - HOÀN THÀNH
+  1. ✅ Thêm random selection cho chế độ "Tự động (Tất cả dịch vụ)"
+  2. ✅ Shuffle ngẫu nhiên thứ tự providers mỗi lần tạo email
+  3. 🔍 TempMail.lol chưa được thêm (cần API key)
+  
+  Previous UPDATE 2025-11-08:
   ✅ SỬA LỖI HTML CONTENT KHÔNG HIỂN THỊ - HOÀN THÀNH
   1. ✅ Fix lỗi HTML/text content không hiển thị cho tất cả providers (Mail.tm, Mail.gw, Guerrilla)
   2. ⏳ Tích hợp etempmail.com để lấy edu mail - PENDING (etempmail.com không có API công khai)
