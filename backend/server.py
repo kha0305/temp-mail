@@ -643,12 +643,11 @@ async def get_domains(service: str = "mailtm"):
 
 @api_router.post("/emails/create", response_model=CreateEmailResponse)
 async def create_email(request: CreateEmailRequest, db: Session = Depends(get_db)):
-    """Create a new temporary email with dual provider fallback (Mail.tm → SMTPLabs)"""
+    """Create a new temporary email with multi-service support"""
     try:
         # Check local rate limit (max 10 emails per minute for development)
-        # TODO: Lower this to 3 for production
         current_time = time.time()
-        MAX_EMAILS_PER_MINUTE = 10  # Increase for development/testing
+        MAX_EMAILS_PER_MINUTE = 10
         
         if current_time - _rate_limit_tracker["reset_time"] > 60:
             # Reset counter after 1 minute
@@ -666,8 +665,13 @@ async def create_email(request: CreateEmailRequest, db: Session = Depends(get_db
         _rate_limit_tracker["create_count"] += 1
         _rate_limit_tracker["last_create_time"] = current_time
         
-        # Use unified email creation with fallback
-        email_data = await create_email_with_fallback(username=request.username)
+        # Use service-specific email creation
+        service = request.service or "mailtm"
+        email_data = await create_email_with_service(
+            service=service,
+            username=request.username,
+            domain=request.domain
+        )
         
         # Calculate expiry time (10 minutes from now)
         now = datetime.now(timezone.utc)
@@ -679,6 +683,9 @@ async def create_email(request: CreateEmailRequest, db: Session = Depends(get_db
             password=email_data["password"],
             token=email_data["token"],
             account_id=email_data["account_id"],
+            provider=email_data["provider"],
+            username=email_data.get("username", ""),
+            domain=email_data.get("domain", ""),
             created_at=now,
             expires_at=expires_at,
             message_count=0
