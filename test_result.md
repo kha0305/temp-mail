@@ -103,7 +103,21 @@
 #====================================================================================================
 
 user_problem_statement: |
-  UPDATE 2025-11-08 (Latest):
+  UPDATE 2025-11-08 (Latest - Save Email Feature):
+  ✅ THÊM TÍNH NĂNG LƯU EMAIL - HOÀN THÀNH
+  1. ✅ Nút "Lưu" khi xem chi tiết email
+  2. ✅ Tab "Mail đã lưu" với danh sách email đã save
+  3. ✅ Chức năng xóa mail đã lưu (checkbox, xóa đã chọn, xóa tất cả)
+  4. ✅ Xem lại nội dung email đã lưu
+  
+  UPDATE 2025-11-08 (Theme Dark Improvement):
+  ✅ CẢI THIỆN THEME DARK & HTML CONTENT - HOÀN THÀNH
+  1. ✅ Sửa lỗi mail không hiển thị nội dung
+  2. ✅ Cải thiện màu sắc theme dark cho dễ nhìn hơn
+  3. ✅ Tăng contrast và visibility
+  4. ✅ Better HTML content rendering với styled elements
+  
+  Previous UPDATE 2025-11-08:
   ✅ RANDOM PROVIDER SELECTION - HOÀN THÀNH
   1. ✅ Thêm random selection cho chế độ "Tự động (Tất cả dịch vụ)"
   2. ✅ Shuffle ngẫu nhiên thứ tự providers mỗi lần tạo email
