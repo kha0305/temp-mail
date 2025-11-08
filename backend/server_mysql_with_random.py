@@ -1,7 +1,8 @@
-"""FastAPI server with MongoDB and multiple email providers (mail.tm, 1secmail, mail.gw, guerrilla, tempmail.lol)"""
-from fastapi import FastAPI, APIRouter, HTTPException
+"""FastAPI server with MySQL and multiple email providers (mail.tm, 1secmail, mail.gw, guerrilla, tempmail.lol) - WITH RANDOM SELECTION"""
+from fastapi import FastAPI, APIRouter, HTTPException, Depends
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
 import os
 import logging
 import asyncio
@@ -12,9 +13,9 @@ from datetime import datetime, timezone, timedelta
 import httpx
 import random
 import string
-import uuid
 
-from database_mongodb import database, emails_collection, history_collection
+from database import engine, get_db, Base
+from models import TempEmail as TempEmailModel, EmailHistory as EmailHistoryModel
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
