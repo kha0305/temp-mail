@@ -503,6 +503,116 @@ function App() {
     }
   };
 
+  // Saved emails functions
+  const loadSavedEmails = async () => {
+    try {
+      const response = await axios.get(`${API}/emails/saved/list`);
+      setSavedEmails(response.data);
+    } catch (error) {
+      console.error('Error loading saved emails:', error);
+    }
+  };
+
+  const saveCurrentMessage = async () => {
+    if (!currentEmail || !selectedMessage) {
+      toast.warning('Không có email nào được chọn');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await axios.post(
+        `${API}/emails/${currentEmail.id}/messages/${selectedMessage.id}/save`
+      );
+      
+      if (response.data.status === 'already_saved') {
+        toast.info('Email đã được lưu trước đó');
+      } else {
+        toast.success('Email đã được lưu thành công! ✅');
+        await loadSavedEmails();
+      }
+    } catch (error) {
+      toast.error('Không thể lưu email', {
+        description: error.response?.data?.detail || 'Lỗi không xác định'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const viewSavedEmail = async (saved) => {
+    try {
+      const response = await axios.get(`${API}/emails/saved/${saved.id}`);
+      setSelectedMessage(response.data);
+      // Mark as viewing saved email
+      setCurrentEmail({ ...saved, isSaved: true });
+    } catch (error) {
+      toast.error('Không thể tải email đã lưu');
+    }
+  };
+
+  const toggleSavedSelection = (savedId) => {
+    setSelectedSavedIds(prev => {
+      if (prev.includes(savedId)) {
+        return prev.filter(id => id !== savedId);
+      } else {
+        return [...prev, savedId];
+      }
+    });
+  };
+
+  const toggleSelectAllSaved = () => {
+    if (selectedSavedIds.length === savedEmails.length) {
+      setSelectedSavedIds([]);
+    } else {
+      setSelectedSavedIds(savedEmails.map(e => e.id));
+    }
+  };
+
+  const deleteSelectedSaved = async () => {
+    if (selectedSavedIds.length === 0) {
+      toast.warning('Chưa chọn email nào');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await axios.delete(`${API}/emails/saved/delete`, {
+        data: { ids: selectedSavedIds }
+      });
+      
+      toast.success(`Đã xóa ${selectedSavedIds.length} email`);
+      setSelectedSavedIds([]);
+      await loadSavedEmails();
+    } catch (error) {
+      toast.error('Không thể xóa email đã chọn');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteAllSaved = async () => {
+    if (savedEmails.length === 0) {
+      toast.warning('Danh sách trống');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await axios.delete(`${API}/emails/saved/delete`, {
+        data: { ids: null }
+      });
+      
+      toast.success('Đã xóa tất cả email đã lưu');
+      setSelectedSavedIds([]);
+      setSavedEmails([]);
+    } catch (error) {
+      toast.error('Không thể xóa tất cả email đã lưu');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
     toast.success('Đã sao chép vào clipboard');
