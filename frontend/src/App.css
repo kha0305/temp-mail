@@ -63,16 +63,22 @@
 }
 
 .dark {
-  --color-bg-primary: var(--color-gray-900);
-  --color-bg-secondary: var(--color-gray-800);
-  --color-bg-tertiary: var(--color-gray-700);
+  /* Improved dark mode with better contrast and readability */
+  --color-bg-primary: #1e293b;  /* Lighter than gray-900, easier on eyes */
+  --color-bg-secondary: #0f172a;  /* Darker base for contrast */
+  --color-bg-tertiary: #334155;  /* Medium tone for cards */
   
-  --color-text-primary: var(--color-gray-50);
-  --color-text-secondary: var(--color-gray-300);
-  --color-text-tertiary: var(--color-gray-400);
+  --color-text-primary: #f1f5f9;  /* Brighter white for better readability */
+  --color-text-secondary: #cbd5e1;  /* Lighter gray for secondary text */
+  --color-text-tertiary: #94a3b8;  /* Medium gray, still readable */
   
-  --color-border-light: var(--color-gray-700);
-  --color-border-medium: var(--color-gray-600);
+  --color-border-light: #334155;  /* Visible but subtle borders */
+  --color-border-medium: #475569;  /* More prominent borders */
+  
+  /* Enhanced shadows for depth */
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
 }
 
 /* ===================================
