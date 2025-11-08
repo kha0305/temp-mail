@@ -626,13 +626,20 @@ function App() {
     }
   };
 
-  const toggleSavedSelection = (savedId) => {
+  const toggleSavedSelection = (emailId) => {
     setSelectedSavedIds(prev => {
-      if (prev.includes(savedId)) {
-        return prev.filter(id => id !== savedId);
-      } else {
-        return [...prev, savedId];
-      }
+      // Prevent duplicate selections
+      const newSelection = prev.includes(emailId)
+        ? prev.filter(id => id !== emailId)
+        : [...prev, emailId];
+      
+      console.log('Toggle Saved Selection:', {
+        emailId,
+        prevSelected: prev,
+        newSelected: newSelection
+      });
+      
+      return newSelection;
     });
   };
 
