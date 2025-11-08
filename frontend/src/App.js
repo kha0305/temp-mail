@@ -434,13 +434,12 @@ function App() {
   };
 
   const viewHistoryEmail = async (email) => {
-    // Just view messages from history email, don't make it current
     try {
       const response = await axios.get(`${API}/emails/history/${email.id}/messages`);
-      setMessages(response.data.messages);
-      setSelectedMessage(null);
-      // Temporarily set as "current" for viewing
-      setCurrentEmail({ ...email, isHistory: true });
+      setHistoryMessages(response.data.messages);
+      setSelectedHistoryEmail(email);
+      setViewMode('detail');
+      setActiveTab('history');
     } catch (error) {
       toast.error('Không thể tải tin nhắn từ lịch sử');
     }
