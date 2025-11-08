@@ -127,7 +127,15 @@ class DeleteHistoryRequest(BaseModel):
 # ============================================
 
 async def get_mailtm_domains():
-    """Get available domains from Mail.tm"""
+    """Get available domains from Mail.tm with caching"""
+    # Check cache first
+    now = datetime.now(timezone.utc).timestamp()
+    cache = _domain_cache["mailtm"]
+    
+    if cache["domains"] and now < cache["expires_at"]:
+        logging.info(f"✅ Using cached Mail.tm domains (TTL: {int(cache['expires_at'] - now)}s)")
+        return cache["domains"]
+    
     async with httpx.AsyncClient(timeout=10.0) as client:
         try:
             response = await client.get(f"{MAILTM_BASE_URL}/domains")
@@ -135,10 +143,19 @@ async def get_mailtm_domains():
             data = response.json()
             domains = data.get("hydra:member", [])
             if domains:
-                return [d["domain"] for d in domains]
+                domain_list = [d["domain"] for d in domains]
+                # Update cache
+                cache["domains"] = domain_list
+                cache["expires_at"] = now + DOMAIN_CACHE_TTL
+                logging.info(f"✅ Cached {len(domain_list)} Mail.tm domains")
+                return domain_list
             return []
         except Exception as e:
             logging.error(f"❌ Mail.tm domains error: {e}")
+            # Return cached domains if available, even if expired
+            if cache["domains"]:
+                logging.warning("⚠️ Using expired cache due to API error")
+                return cache["domains"]
             return []
 
 
