@@ -662,7 +662,21 @@ function App() {
     try {
       const response = await axios.get(`${API}/emails/saved/list`);
       console.log('📧 Loaded saved emails:', response.data);
-      setSavedEmails(response.data);
+      
+      // Deduplicate by ID to prevent duplicate key errors
+      const uniqueSaved = [];
+      const seenIds = new Set();
+      
+      for (const email of response.data) {
+        if (!seenIds.has(email.id)) {
+          seenIds.add(email.id);
+          uniqueSaved.push(email);
+        } else {
+          console.warn(`⚠️ Duplicate saved email ID found and removed: ${email.id}`);
+        }
+      }
+      
+      setSavedEmails(uniqueSaved);
     } catch (error) {
       console.error('Error loading saved emails:', error);
     }
