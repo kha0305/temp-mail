@@ -163,17 +163,17 @@ python -m uvicorn server:app --host 0.0.0.0 --port 8001 --reload
 ### Terminal 2 - Frontend
 ```bash
 cd frontend
-PORT=3000 yarn start
+PORT=7050 yarn start
 ```
 
 **Kiểm tra:**
 - [ ] Compile thành công
-- [ ] Browser tự động mở http://localhost:3000
+- [ ] Browser tự động mở http://localhost:7050
 - [ ] Không có lỗi compile
 
 ## ✅ Bước 7: Test Ứng Dụng
 
-### Frontend (http://localhost:3000)
+### Frontend (http://localhost:7050)
 - [ ] Trang web load thành công
 - [ ] Email tự động được tạo khi vào trang
 - [ ] Hiển thị địa chỉ email
