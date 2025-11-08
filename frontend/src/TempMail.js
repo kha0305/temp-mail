@@ -231,26 +231,26 @@ const TempMail = () => {
               ) : (
                 <>
                   {/* Title and Description */}
-                  <div className="text-center mb-8">
-                    <h2 className="text-3xl font-bold text-gray-900 mb-3">
-                      Địa chỉ email 10 phút của bạn
+                  <div className="text-center mb-6">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                      {heroTitle}
                     </h2>
-                    <p className="text-gray-600 text-base max-w-3xl mx-auto">
+                    <p className="text-gray-600 text-sm max-w-3xl mx-auto">
                       Với 10 Minute Mail, hãy tránh thư rác, giữ hộp thư của bạn sạch sẽ và bảo vệ quyền riêng tư của bạn một cách dễ dàng.
                     </p>
                   </div>
 
-                  {/* Email Display Box */}
-                  <div className="mb-8">
-                    <div className="flex items-center justify-between bg-gray-50 p-6 rounded-xl border border-gray-200">
+                  {/* Email Display Box - Compact */}
+                  <div className="mb-6">
+                    <div className="flex items-center justify-between bg-gray-50 p-4 rounded-lg border border-gray-200">
                       <div className="flex-1">
-                        <div className="text-xl font-mono text-gray-900 break-all">
+                        <div className="text-lg font-mono text-gray-900 break-all">
                           {currentEmail.email}
                         </div>
                       </div>
-                      <div className="flex items-center gap-4 ml-6">
+                      <div className="flex items-center gap-3 ml-4">
                         <span 
-                          className={`text-4xl font-bold tabular-nums ${
+                          className={`text-3xl font-bold tabular-nums ${
                             timeLeft < 60 ? 'text-red-500' : 'text-gray-900'
                           }`}
                         >
@@ -258,10 +258,10 @@ const TempMail = () => {
                         </span>
                         <button
                           onClick={() => copyToClipboard(currentEmail.email)}
-                          className="p-3 hover:bg-gray-200 rounded-lg transition-colors"
+                          className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
                           title="Copy email"
                         >
-                          <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                           </svg>
                         </button>
@@ -270,12 +270,12 @@ const TempMail = () => {
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex justify-center gap-4 mb-12">
+                  <div className="flex justify-center gap-3 mb-8">
                     <button
                       onClick={refreshTimer}
-                      className="flex items-center gap-2 px-6 py-3 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-700 font-medium"
+                      className="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-700 font-medium text-sm"
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                       </svg>
                       Làm mới 10 phút
@@ -283,21 +283,30 @@ const TempMail = () => {
                     <button
                       onClick={changeEmail}
                       disabled={loading}
-                      className="flex items-center gap-2 px-6 py-3 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-700 font-medium disabled:bg-gray-100"
+                      className="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-700 font-medium text-sm disabled:bg-gray-100"
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                       </svg>
                       Thay đổi
                     </button>
                     <button
                       onClick={deleteEmail}
-                      className="flex items-center gap-2 px-6 py-3 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-700 font-medium"
+                      className="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-700 font-medium text-sm"
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
                       Xóa
+                    </button>
+                    <button
+                      onClick={saveCurrentEmail}
+                      className="flex items-center gap-2 px-5 py-2.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium text-sm"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Lưu
                     </button>
                   </div>
 
