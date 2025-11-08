@@ -1392,3 +1392,38 @@ agent_communication:
       - /app/backend/server.py: Code đã được cập nhật
       
       Status: ✅ READY FOR PRODUCTION (Local MySQL environment)
+
+  - agent: "main"
+    message: |
+      ✅ SỬA LỖI DOMAIN SELECTION VÀ XÁC NHẬN AUTO-REFRESH (2025-01-08)
+      
+      Vấn đề user báo cáo:
+      1. ❌ Các service khác (1secmail) không có domain để chọn
+      2. ❌ Không tự động làm mới thời gian khi hết hạn
+      
+      === GIẢI PHÁP ĐÃ ÁP DỤNG ===
+      
+      1. ✅ Fix Backend Domain Endpoint:
+         - Rewrite `/api/domains` với logic riêng cho từng service
+         - mailtm: Chỉ Mail.tm domains
+         - 1secmail: Chỉ 1secmail domains
+         - auto: Mail.tm first, fallback to 1secmail
+      
+      2. ✅ Update Frontend Service Selection:
+         - Giảm từ 6 options xuống 3: auto, mailtm, 1secmail
+         - Remove unsupported services
+         - Default service = "auto" cho UX tốt hơn
+      
+      3. ✅ Verify Auto-Refresh:
+         - Code đã có sẵn (lines 169-239)
+         - Timer auto-create email khi hết hạn
+         - Race condition prevention
+         - Status: Đã hoạt động, không cần sửa
+      
+      Files: 
+      - server.py: Line 760-782
+      - App.js: Lines 62, 77-92, 594-606, 796-808
+      - FIX_DOMAIN_SELECTION.md: Chi tiết đầy đủ
+      
+      Status: ✅ Ready for testing
+
