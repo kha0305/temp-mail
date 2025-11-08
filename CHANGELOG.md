@@ -56,7 +56,7 @@
 - **`frontend/.env`**:
   ```env
   # Cũ:
-  REACT_APP_BACKEND_URL=https://smtp-backup.preview.emergentagent.com
+  REACT_APP_BACKEND_URL=https://ui-backend-repair.preview.emergentagent.com
   
   # Mới:
   REACT_APP_BACKEND_URL=http://localhost:8001
