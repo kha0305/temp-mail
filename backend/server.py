@@ -930,6 +930,12 @@ async def create_email_with_service(service: str, username: str = None, domain: 
             return await create_mailgw_email(username, domain, password)
         elif service == "1secmail":
             return await create_1secmail_email(username, domain)
+        elif service == "guerrilla":
+            return await create_guerrilla_email(username, domain)
+        elif service == "tempmail_lol":
+            return await create_tempmail_lol_email(username, domain)
+        elif service == "dropmail":
+            return await create_dropmail_email(username, domain)
         else:
             raise HTTPException(status_code=400, detail=f"Unknown service: {service}")
     except HTTPException as e:
@@ -938,12 +944,8 @@ async def create_email_with_service(service: str, username: str = None, domain: 
             logging.warning(f"⚠️ {service} failed ({e.status_code}), trying fallback services...")
             
             # Define fallback order based on failed service
-            if service == "mailtm":
-                fallback_services = ["mailgw", "1secmail"]
-            elif service == "mailgw":
-                fallback_services = ["mailtm", "1secmail"]
-            else:
-                fallback_services = ["mailtm", "mailgw"]
+            all_services = ["mailtm", "mailgw", "1secmail", "guerrilla", "tempmail_lol", "dropmail"]
+            fallback_services = [s for s in all_services if s != service][:3]  # Try 3 fallbacks
             
             # Try fallback services
             for fallback in fallback_services:
@@ -955,6 +957,12 @@ async def create_email_with_service(service: str, username: str = None, domain: 
                         return await create_mailgw_email(username, domain, password)
                     elif fallback == "1secmail":
                         return await create_1secmail_email(username, domain)
+                    elif fallback == "guerrilla":
+                        return await create_guerrilla_email(username, domain)
+                    elif fallback == "tempmail_lol":
+                        return await create_tempmail_lol_email(username, domain)
+                    elif fallback == "dropmail":
+                        return await create_dropmail_email(username, domain)
                 except Exception as fallback_error:
                     logging.error(f"❌ Fallback {fallback} failed: {fallback_error}")
                     continue
