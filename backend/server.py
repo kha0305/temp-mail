@@ -367,7 +367,7 @@ async def smtplabs_get_message_detail(account_id: str, mailbox_id: str, message_
             response = await http_client.get(
                 f"{SMTPLABS_BASE_URL}/accounts/{account_id}/mailboxes/{mailbox_id}/messages/{message_id}",
                 headers={
-                    "X-API-KEY": SMTPLABS_API_KEY,
+                    "X-API-KEY": api_key,
                     "Accept": "application/json"
                 }
             )
