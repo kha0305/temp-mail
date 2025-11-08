@@ -357,10 +357,41 @@ async def get_1secmail_message_detail(username: str, domain: str, message_id: st
 # Multi-Provider Email Creation with Failover
 # ============================================
 
+def is_provider_in_cooldown(provider: str) -> bool:
+    """Check if provider is in cooldown period"""
+    now = datetime.now(timezone.utc).timestamp()
+    stats = _provider_stats.get(provider, {})
+    cooldown_until = stats.get("cooldown_until", 0)
+    
+    if now < cooldown_until:
+        remaining = int(cooldown_until - now)
+        logging.warning(f"⏸️ {provider} is in cooldown (remaining: {remaining}s)")
+        return True
+    
+    return False
+
+
+def set_provider_cooldown(provider: str, duration: int):
+    """Set cooldown period for a provider"""
+    now = datetime.now(timezone.utc).timestamp()
+    _provider_stats[provider]["cooldown_until"] = now + duration
+    _provider_stats[provider]["rate_limited"] = True
+    logging.warning(f"🔒 {provider} cooldown set for {duration}s")
+
+
+def clear_provider_cooldown(provider: str):
+    """Clear cooldown for a provider"""
+    _provider_stats[provider]["cooldown_until"] = 0
+    _provider_stats[provider]["rate_limited"] = False
+    logging.info(f"🔓 {provider} cooldown cleared")
+
+
 async def create_email_with_failover(username: Optional[str] = None, preferred_service: str = "auto"):
     """
-    Create email with automatic failover between providers
-    Tries Mail.tm first, then falls back to 1secmail if rate limited
+    Create email with smart failover between providers
+    - Implements cooldown after rate limiting
+    - Retry logic for transient errors
+    - Detailed logging and stats tracking
     """
     
     if not username:
@@ -368,69 +399,104 @@ async def create_email_with_failover(username: Optional[str] = None, preferred_s
     
     password = ''.join(random.choices(string.ascii_letters + string.digits, k=16))
     
-    # Try Mail.tm first (if not explicitly disabled)
+    # Try Mail.tm first (if not in cooldown and not explicitly disabled)
     if preferred_service in ["auto", "mailtm"]:
-        try:
-            logging.info("🔄 Trying Mail.tm...")
-            domains = await get_mailtm_domains()
-            if domains:
-                domain = domains[0]
-                address = f"{username}@{domain}"
+        if not is_provider_in_cooldown("mailtm"):
+            try:
+                logging.info("🔄 Trying Mail.tm...")
+                domains = await get_mailtm_domains()
                 
-                account_data = await create_mailtm_account(address, password)
-                token = await get_mailtm_token(address, password)
-                
-                _provider_stats["mailtm"]["success"] += 1
-                logging.info("✅ Mail.tm email created successfully")
-                
-                return {
-                    "address": address,
-                    "password": password,
-                    "token": token,
-                    "account_id": account_data["id"],
-                    "provider": "mailtm",
-                    "service_name": "Mail.tm",
-                    "username": username,
-                    "domain": domain
-                }
-        except HTTPException as e:
-            if e.status_code == 429:
-                logging.warning("⚠️ Mail.tm rate limited, falling back to 1secmail...")
+                if not domains:
+                    logging.warning("⚠️ No Mail.tm domains available")
+                else:
+                    domain = domains[0]
+                    address = f"{username}@{domain}"
+                    
+                    account_data = await create_mailtm_account(address, password)
+                    token = await get_mailtm_token(address, password)
+                    
+                    # Success - clear any cooldown
+                    clear_provider_cooldown("mailtm")
+                    _provider_stats["mailtm"]["success"] += 1
+                    logging.info(f"✅ Mail.tm email created: {address}")
+                    
+                    return {
+                        "address": address,
+                        "password": password,
+                        "token": token,
+                        "account_id": account_data["id"],
+                        "provider": "mailtm",
+                        "service_name": "Mail.tm",
+                        "username": username,
+                        "domain": domain
+                    }
+                    
+            except HTTPException as e:
+                if e.status_code == 429:
+                    logging.warning("⚠️ Mail.tm rate limited (429)")
+                    set_provider_cooldown("mailtm", MAILTM_COOLDOWN_SECONDS)
+                    _provider_stats["mailtm"]["failures"] += 1
+                    _provider_stats["mailtm"]["last_failure_time"] = datetime.now(timezone.utc).timestamp()
+                else:
+                    raise
+            except Exception as e:
+                logging.error(f"❌ Mail.tm failed: {e}")
                 _provider_stats["mailtm"]["failures"] += 1
-                _provider_stats["mailtm"]["last_failure_time"] = datetime.now(timezone.utc).timestamp()
-            else:
-                raise
-        except Exception as e:
-            logging.error(f"❌ Mail.tm failed: {e}")
-            _provider_stats["mailtm"]["failures"] += 1
+        else:
+            logging.info("⏭️ Skipping Mail.tm (in cooldown)")
     
-    # Fallback to 1secmail
-    try:
-        logging.info("🔄 Trying 1secmail...")
-        domains = await get_1secmail_domains()
-        if not domains:
-            raise HTTPException(status_code=500, detail="No email providers available")
-        
-        domain = domains[0]
-        account_data = await create_1secmail_account(username, domain)
-        
-        _provider_stats["1secmail"]["success"] += 1
-        logging.info("✅ 1secmail email created successfully")
-        
-        return {
-            "address": account_data["address"],
-            "password": account_data["password"],
-            "token": account_data["token"],
-            "account_id": account_data["account_id"],
-            "provider": "1secmail",
-            "service_name": "1secmail",
-            "username": username,
-            "domain": domain
-        }
-    except Exception as e:
-        logging.error(f"❌ 1secmail failed: {e}")
-        _provider_stats["1secmail"]["failures"] += 1
-        raise HTTPException(status_code=500, detail="All email providers failed")
+    # Fallback to 1secmail with retry logic
+    for attempt in range(RETRY_MAX_ATTEMPTS):
+        try:
+            logging.info(f"🔄 Trying 1secmail... (attempt {attempt + 1}/{RETRY_MAX_ATTEMPTS})")
+            domains = await get_1secmail_domains()
+            
+            if not domains:
+                if attempt < RETRY_MAX_ATTEMPTS - 1:
+                    delay = RETRY_BASE_DELAY * (2 ** attempt)
+                    logging.warning(f"⚠️ No 1secmail domains, retrying in {delay}s...")
+                    await asyncio.sleep(delay)
+                    continue
+                else:
+                    raise HTTPException(
+                        status_code=503, 
+                        detail="Không thể kết nối đến dịch vụ email. Vui lòng thử lại sau."
+                    )
+            
+            domain = domains[0]
+            account_data = await create_1secmail_account(username, domain)
+            
+            _provider_stats["1secmail"]["success"] += 1
+            logging.info(f"✅ 1secmail email created: {account_data['address']}")
+            
+            return {
+                "address": account_data["address"],
+                "password": account_data["password"],
+                "token": account_data["token"],
+                "account_id": account_data["account_id"],
+                "provider": "1secmail",
+                "service_name": "1secmail",
+                "username": username,
+                "domain": domain
+            }
+            
+        except HTTPException:
+            raise
+        except Exception as e:
+            logging.error(f"❌ 1secmail attempt {attempt + 1} failed: {e}")
+            _provider_stats["1secmail"]["failures"] += 1
+            
+            if attempt < RETRY_MAX_ATTEMPTS - 1:
+                delay = RETRY_BASE_DELAY * (2 ** attempt)
+                logging.info(f"⏳ Retrying in {delay}s...")
+                await asyncio.sleep(delay)
+            else:
+                # All retries exhausted
+                mailtm_status = "rate limited" if is_provider_in_cooldown("mailtm") else "unavailable"
+                raise HTTPException(
+                    status_code=503,
+                    detail=f"Tất cả dịch vụ email đều không khả dụng. Mail.tm: {mailtm_status}, 1secmail: failed after {RETRY_MAX_ATTEMPTS} attempts"
+                )
 
 
 # ============================================
