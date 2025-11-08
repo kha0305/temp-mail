@@ -442,7 +442,7 @@ async def root():
 
 @api_router.post("/emails/create", response_model=CreateEmailResponse)
 async def create_email(request: CreateEmailRequest, db: Session = Depends(get_db)):
-    """Create a new temporary email with rate limiting"""
+    """Create a new temporary email with dual provider fallback (Mail.tm → SMTPLabs)"""
     try:
         # Check local rate limit (max 10 emails per minute for development)
         # TODO: Lower this to 3 for production
@@ -465,36 +465,19 @@ async def create_email(request: CreateEmailRequest, db: Session = Depends(get_db
         _rate_limit_tracker["create_count"] += 1
         _rate_limit_tracker["last_create_time"] = current_time
         
-        # Get available domain (with caching)
-        domain = await get_available_domains()
-        if not domain:
-            raise HTTPException(status_code=500, detail="No domains available")
-        
-        # Generate random username if not provided
-        if request.username:
-            username = request.username
-        else:
-            username = ''.join(random.choices(string.ascii_lowercase + string.digits, k=10))
-        
-        address = f"{username}@{domain}"
-        password = ''.join(random.choices(string.ascii_letters + string.digits, k=16))
-        
-        # Create account on Mail.tm (with retry logic)
-        account_data = await create_mailtm_account(address, password)
-        
-        # Get authentication token
-        token = await get_mailtm_token(address, password)
+        # Use unified email creation with fallback
+        email_data = await create_email_with_fallback(username=request.username)
         
         # Calculate expiry time (10 minutes from now)
         now = datetime.now(timezone.utc)
         expires_at = now + timedelta(minutes=10)
         
-        # Save to database
+        # Save to database with provider info
         email = TempEmailModel(
-            address=address,
-            password=password,
-            token=token,
-            account_id=account_data["id"],
+            address=email_data["address"],
+            password=email_data["password"],
+            token=email_data["token"],
+            account_id=email_data["account_id"],
             created_at=now,
             expires_at=expires_at,
             message_count=0
