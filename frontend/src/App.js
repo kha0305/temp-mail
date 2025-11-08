@@ -238,17 +238,24 @@ function App() {
     }
   }, [currentEmail?.id, currentEmail?.expires_at, currentEmail?.isHistory, selectedService]);
 
-  // Auto refresh messages every 30 seconds
+  // Auto refresh messages every 30 seconds (silent mode)
   useEffect(() => {
-    if (currentEmail?.id && autoRefresh) {
+    if (currentEmail?.id && autoRefresh && !currentEmail?.isHistory) {
+      console.log('🔄 Auto-refresh enabled for email:', currentEmail.address);
+      
       const interval = setInterval(() => {
         if (currentEmail?.id) {
-          refreshMessages(currentEmail.id, false);
+          console.log('🔄 Auto-refreshing messages...');
+          refreshMessages(currentEmail.id, false); // Silent refresh (no toast)
         }
       }, 30000); // 30 seconds
-      return () => clearInterval(interval);
+      
+      return () => {
+        console.log('🛑 Auto-refresh cleanup');
+        clearInterval(interval);
+      };
     }
-  }, [currentEmail?.id, autoRefresh]);
+  }, [currentEmail?.id, currentEmail?.isHistory, autoRefresh]);
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
