@@ -604,6 +604,7 @@ function App() {
   const loadSavedEmails = async () => {
     try {
       const response = await axios.get(`${API}/emails/saved/list`);
+      console.log('📧 Loaded saved emails:', response.data);
       setSavedEmails(response.data);
     } catch (error) {
       console.error('Error loading saved emails:', error);
