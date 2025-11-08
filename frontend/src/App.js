@@ -783,43 +783,7 @@ function App() {
                       )}
                     </div>
 
-                    {/* Service Selection Form (Always Visible) */}
-                    <div className="service-selection-form">
-                      <div className="form-row">
-                        <div className="form-group">
-                          <label className="form-label">Dịch vụ email</label>
-                          <select
-                            className="form-select"
-                            value={selectedService}
-                            onChange={(e) => setSelectedService(e.target.value)}
-                            disabled={loading}
-                          >
-                            <option value="auto">Tự động (Tất cả dịch vụ)</option>
-                            <option value="mailtm">Mail.tm</option>
-                            <option value="1secmail">1secmail</option>
-                            <option value="mailgw">Mail.gw</option>
-                            <option value="guerrilla">Guerrilla Mail</option>
-                          </select>
-                        </div>
-                        <div className="form-group">
-                          <label className="form-label">Domain</label>
-                          <select
-                            className="form-select"
-                            value={selectedDomain}
-                            onChange={(e) => setSelectedDomain(e.target.value)}
-                            disabled={loading || loadingDomains}
-                          >
-                            {loadingDomains ? (
-                              <option>Đang tải...</option>
-                            ) : (
-                              availableDomains.map(domain => (
-                                <option key={domain} value={domain}>{domain}</option>
-                              ))
-                            )}
-                          </select>
-                        </div>
-                      </div>
-                    </div>
+                    {/* Service Selection Form Hidden - Service badge shows provider */}
 
                     {/* Action Buttons */}
                     <div className="action-buttons-group">
