@@ -1052,11 +1052,18 @@ async def get_domains(service: str = "auto"):
     elif service == "mailgw":
         domains = await get_mailgw_domains()
     elif service == "1secmail":
-        domains = await get_1secmail_domains()
+        # 1secmail is disabled - API requires authentication
+        logging.warning("⚠️ 1secmail domains requested but service is disabled (requires API key)")
+        return {
+            "domains": [], 
+            "service": service,
+            "status": "disabled",
+            "message": "1secmail requires API authentication (disabled 2025-01-08)"
+        }
     elif service == "guerrilla":
         domains = await get_guerrilla_domains()
     elif service == "auto":
-        # Try providers in order
+        # Try providers in order (excluding 1secmail)
         mailtm_domains = await get_mailtm_domains()
         if mailtm_domains:
             domains = mailtm_domains
@@ -1065,8 +1072,9 @@ async def get_domains(service: str = "auto"):
             if mailgw_domains:
                 domains = mailgw_domains
             else:
-                onesec_domains = await get_1secmail_domains()
-                domains = onesec_domains
+                # Skip 1secmail, try guerrilla
+                guerrilla_domains = await get_guerrilla_domains()
+                domains = guerrilla_domains
     
     return {"domains": domains, "service": service}
 
