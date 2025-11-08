@@ -166,10 +166,14 @@ function App() {
     initializeApp();
   }, []);
 
-  // Timer countdown - calculate from expires_at
+  // Timer countdown - calculate from expires_at with auto-create on expiry
   useEffect(() => {
-    if (currentEmail && currentEmail.expires_at) {
-      let isCreatingNewEmail = false;
+    if (currentEmail && currentEmail.expires_at && !currentEmail.isHistory) {
+      // Reset flag when email changes
+      if (lastEmailIdRef.current !== currentEmail.id) {
+        isCreatingEmailRef.current = false;
+        lastEmailIdRef.current = currentEmail.id;
+      }
       
       const updateTimer = async () => {
         const now = new Date();
@@ -179,10 +183,11 @@ function App() {
         if (diffSeconds <= 0) {
           setTimeLeft(0);
           
-          // Email expired, auto-create new email (only once)
-          if (!isCreatingNewEmail) {
-            isCreatingNewEmail = true;
-            toast.info('Email đã hết hạn, đang tạo email mới...');
+          // Email expired, auto-create new email (only once using ref)
+          if (!isCreatingEmailRef.current) {
+            isCreatingEmailRef.current = true;
+            console.log('⏰ Timer expired, auto-creating new email...');
+            toast.info('⏰ Email đã hết hạn, đang tạo email mới tự động...');
             
             try {
               const response = await axios.post(`${API}/emails/create`, {
@@ -194,8 +199,9 @@ function App() {
               setMessages([]);
               setSelectedMessage(null);
               
-              toast.success('Email mới đã được tạo!', {
-                description: `${newEmail.address} (${newEmail.service_name || newEmail.provider})`
+              toast.success('✅ Email mới đã được tạo tự động!', {
+                description: `${newEmail.address} (${newEmail.service_name || newEmail.provider})`,
+                duration: 5000
               });
               
               // Reload history
@@ -206,9 +212,12 @@ function App() {
                 console.error('Error reloading history:', err);
               }
             } catch (error) {
-              toast.error('Không thể tạo email mới', {
+              console.error('Auto-create email error:', error);
+              toast.error('Không thể tạo email mới tự động', {
                 description: error.response?.data?.detail || 'Lỗi không xác định'
               });
+              // Reset flag to allow retry
+              isCreatingEmailRef.current = false;
             }
           }
         } else {
@@ -221,9 +230,13 @@ function App() {
       
       // Update every second
       const timer = setInterval(updateTimer, 1000);
-      return () => clearInterval(timer);
+      return () => {
+        clearInterval(timer);
+      };
+    } else if (!currentEmail) {
+      setTimeLeft(0);
     }
-  }, [currentEmail, selectedService]);
+  }, [currentEmail?.id, currentEmail?.expires_at, currentEmail?.isHistory, selectedService]);
 
   // Auto refresh messages every 30 seconds
   useEffect(() => {
