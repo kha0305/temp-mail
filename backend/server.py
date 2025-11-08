@@ -469,7 +469,7 @@ async def get_mailtm_domains():
 
 async def create_email_with_service(service: str, username: str = None, domain: str = None):
     """
-    Create email using specified service
+    Create email using specified service with automatic fallback
     """
     # Generate username if not provided
     if not username:
@@ -477,14 +477,51 @@ async def create_email_with_service(service: str, username: str = None, domain: 
     
     password = ''.join(random.choices(string.ascii_letters + string.digits, k=16))
     
-    if service == "mailtm":
-        return await create_mailtm_email(username, domain, password)
-    elif service == "mailgw":
-        return await create_mailgw_email(username, domain, password)
-    elif service == "1secmail":
-        return await create_1secmail_email(username, domain)
-    else:
-        raise HTTPException(status_code=400, detail=f"Unknown service: {service}")
+    # Try primary service
+    try:
+        if service == "mailtm":
+            return await create_mailtm_email(username, domain, password)
+        elif service == "mailgw":
+            return await create_mailgw_email(username, domain, password)
+        elif service == "1secmail":
+            return await create_1secmail_email(username, domain)
+        else:
+            raise HTTPException(status_code=400, detail=f"Unknown service: {service}")
+    except HTTPException as e:
+        # If rate limited or service unavailable, try fallback services
+        if e.status_code in [429, 503]:
+            logging.warning(f"⚠️ {service} failed ({e.status_code}), trying fallback services...")
+            
+            # Define fallback order based on failed service
+            if service == "mailtm":
+                fallback_services = ["mailgw", "1secmail"]
+            elif service == "mailgw":
+                fallback_services = ["mailtm", "1secmail"]
+            else:
+                fallback_services = ["mailtm", "mailgw"]
+            
+            # Try fallback services
+            for fallback in fallback_services:
+                try:
+                    logging.info(f"🔄 Trying fallback: {fallback}")
+                    if fallback == "mailtm":
+                        return await create_mailtm_email(username, domain, password)
+                    elif fallback == "mailgw":
+                        return await create_mailgw_email(username, domain, password)
+                    elif fallback == "1secmail":
+                        return await create_1secmail_email(username, domain)
+                except Exception as fallback_error:
+                    logging.error(f"❌ Fallback {fallback} failed: {fallback_error}")
+                    continue
+            
+            # All services failed
+            raise HTTPException(
+                status_code=503,
+                detail="Tất cả dịch vụ email tạm thời không khả dụng. Vui lòng thử lại sau."
+            )
+        else:
+            # Re-raise other errors
+            raise
 
 
 async def create_mailtm_email(username: str, domain: str = None, password: str = None):
