@@ -216,7 +216,7 @@ kill -9 <PID>
 **Giải pháp:**
 ```bash
 # Đổi PORT trong frontend/.env:
-PORT=3000
+PORT=7050
 
 # Hoặc kill process:
 # Windows: taskkill /IM node.exe /F
