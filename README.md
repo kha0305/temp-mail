@@ -193,7 +193,7 @@ python init_db.py --reset
 1. **MySQL phải đang chạy** trước khi start backend
 2. **Đổi password** trong `backend/.env` thành password MySQL của bạn
 3. **Chạy init_db.py** để tạo tables trước khi start server
-4. **Port 8001 và 3000** không được chiếm bởi process khác
+4. **Port 8001 và 7050** không được chiếm bởi process khác
 5. **Background task** tự động chạy - check expired emails mỗi 30 giây
 
 ## 📞 Support
