@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import { Toaster } from '@/components/ui/sonner';
 import { 
   Mail, Copy, Trash2, RefreshCw, Sun, Moon, 
-  Clock, Edit, Inbox, History, Server
+  Clock, Edit, Inbox, History, Server, Bookmark
 } from 'lucide-react';
 import './App.css';
 
