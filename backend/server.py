@@ -1043,10 +1043,26 @@ async def get_domains(service: str = "auto"):
 @app.on_event("startup")
 async def startup_event():
     """Start background tasks on application startup"""
-    from background_tasks_mongodb import start_background_tasks
-    start_background_tasks()
+    # Start background task using asyncio.create_task instead of threading
+    asyncio.create_task(background_task_loop())
     logging.info("✅ Application started with background tasks (MongoDB)")
     logging.info("✅ Multi-provider support: Mail.tm, Mail.gw, 1secmail, Guerrilla Mail, TempMail.lol")
+
+
+async def background_task_loop():
+    """Main background task loop"""
+    from background_tasks_mongodb import check_and_move_expired_emails
+    CHECK_INTERVAL = 30
+    
+    logging.info(f"🚀 Background task started - checking every {CHECK_INTERVAL}s")
+    
+    while True:
+        try:
+            await check_and_move_expired_emails()
+        except Exception as e:
+            logging.error(f"❌ Error in background task loop: {e}")
+        
+        await asyncio.sleep(CHECK_INTERVAL)
 
 
 # Include the router in the main app
