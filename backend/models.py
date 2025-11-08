@@ -14,6 +14,8 @@ class TempEmail(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     expires_at = Column(DateTime, nullable=False)  # NEW: Expiry time
     message_count = Column(Integer, default=0, nullable=False)
+    provider = Column(String(50), default="mailtm", nullable=False)  # NEW: Provider tracking (mailtm/smtplabs)
+    mailbox_id = Column(String(255), nullable=True)  # NEW: For SMTPLabs mailbox tracking
     
     def to_dict(self):
         """Convert model to dictionary"""
