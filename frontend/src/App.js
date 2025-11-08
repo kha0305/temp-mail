@@ -794,7 +794,7 @@ function App() {
                             onChange={(e) => setSelectedService(e.target.value)}
                             disabled={loading}
                           >
-                            <option value="auto">Tự động (Tất cả dịch vụ)</option>
+                            <option value="auto">🎲Random</option>
                             <option value="mailtm">Mail.tm</option>
                             <option value="1secmail">1secmail</option>
                             <option value="mailgw">Mail.gw</option>
@@ -1049,7 +1049,7 @@ function App() {
                             onChange={(e) => setSelectedService(e.target.value)}
                             disabled={loading}
                           >
-                            <option value="auto">Tự động (Tất cả dịch vụ)</option>
+                            <option value="auto">🎲Random</option>
                             <option value="mailtm">Mail.tm</option>
                             <option value="1secmail">1secmail</option>
                             <option value="mailgw">Mail.gw</option>
