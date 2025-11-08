@@ -59,6 +59,11 @@ function App() {
   const [activeTab, setActiveTab] = useState('current');
   const [selectedHistoryIds, setSelectedHistoryIds] = useState([]);
   const [selectedSavedIds, setSelectedSavedIds] = useState([]);
+  const [viewMode, setViewMode] = useState('list'); // 'list' or 'detail'
+  const [selectedHistoryEmail, setSelectedHistoryEmail] = useState(null);
+  const [selectedSavedEmail, setSelectedSavedEmail] = useState(null);
+  const [historyMessages, setHistoryMessages] = useState([]);
+  const [savedMessageDetail, setSavedMessageDetail] = useState(null);
   
   // Service & Domain selection
   const [selectedService, setSelectedService] = useState('auto'); // Default: Auto
