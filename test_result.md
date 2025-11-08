@@ -127,6 +127,34 @@ user_problem_statement: |
   - Port: 3306
 
 backend:
+  - task: "Fix HTML content không hiển thị"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: |
+          ✅ Fixed HTML/text content display issue:
+          - Updated get_mailtm_message_detail() to normalize html/text to arrays
+          - Updated get_mailgw_message_detail() to normalize html/text to arrays
+          - Added proper type checking: handle both string and array formats
+          - Convert strings to arrays for consistent frontend rendering
+          - Empty strings/arrays are properly handled
+          
+          Backend changes:
+          - Lines 230-268: Normalize Mail.tm message detail response
+          - Lines 461-499: Normalize Mail.gw message detail response
+          - Guerrilla already returns proper array format
+          
+          Result:
+          - HTML content will now display correctly for all providers
+          - Text content will now display correctly for all providers
+          - No more empty/blank message detail screens
+  
   - task: "Fix Git merge conflicts in backend"
     implemented: true
     working: true
