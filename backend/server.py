@@ -1086,7 +1086,8 @@ async def startup_event():
     # Start background task using asyncio.create_task instead of threading
     asyncio.create_task(background_task_loop())
     logging.info("✅ Application started with background tasks (MongoDB)")
-    logging.info("✅ Multi-provider support: Mail.tm, Mail.gw, 1secmail, Guerrilla Mail, TempMail.lol")
+    logging.info("✅ Active providers: Mail.tm, Mail.gw, Guerrilla Mail, TempMail.lol")
+    logging.info("⚠️ Disabled: 1secmail (requires API key)")
 
 
 async def background_task_loop():
