@@ -82,10 +82,14 @@ function App() {
       setAvailableDomains(domains);
       if (domains.length > 0) {
         setSelectedDomain(domains[0]); // Select first domain by default
+      } else {
+        console.warn(`No domains available for service: ${service}`);
       }
     } catch (error) {
       console.error('Error loading domains:', error);
-      toast.error('Không thể tải domains');
+      toast.error('Không thể tải domains', {
+        description: 'Vui lòng thử lại hoặc chọn dịch vụ khác'
+      });
     } finally {
       setLoadingDomains(false);
     }
