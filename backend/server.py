@@ -655,8 +655,10 @@ async def create_email_with_failover(username: Optional[str] = None, preferred_s
         providers_to_try = ["mailgw"]
     elif preferred_service == "guerrilla":
         providers_to_try = ["guerrilla"]
-    else:  # auto
-        providers_to_try = ["mailtm", "1secmail", "mailgw", "guerrilla"]
+    else:  # auto - RANDOM SELECTION
+        providers_to_try = ["mailtm", "mailgw", "guerrilla"]  # Removed 1secmail (disabled)
+        random.shuffle(providers_to_try)  # Shuffle for random selection
+        logging.info(f"🎲 Random provider order: {providers_to_try}")
     
     errors = []
     
