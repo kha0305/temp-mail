@@ -120,7 +120,7 @@ async def create_mailtm_account(address: str, password: str):
             return response.json()
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 429:
-                logging.warning(f"⚠️ Mail.tm rate limited (429)")
+                logging.warning("⚠️ Mail.tm rate limited (429)")
                 raise HTTPException(status_code=429, detail="Mail.tm rate limited")
             raise
 
