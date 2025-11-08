@@ -104,6 +104,8 @@ class EmailHistorySchema(BaseModel):
 
 class CreateEmailRequest(BaseModel):
     username: Optional[str] = None
+    service: Optional[str] = "mailtm"  # Default to mailtm
+    domain: Optional[str] = None  # If None, will use first available domain
 
 
 class CreateEmailResponse(BaseModel):
