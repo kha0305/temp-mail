@@ -561,7 +561,7 @@ async def get_emails(db: Session = Depends(get_db)):
 
 
 @api_router.get("/emails/{email_id}")
-async def get_email(email_id: str, db: Session = Depends(get_db)):
+async def get_email(email_id: int, db: Session = Depends(get_db)):
     """Get email by ID"""
     email = db.query(TempEmailModel).filter(TempEmailModel.id == email_id).first()
     if not email:
@@ -571,7 +571,7 @@ async def get_email(email_id: str, db: Session = Depends(get_db)):
 
 
 @api_router.get("/emails/{email_id}/messages")
-async def get_email_messages(email_id: str, db: Session = Depends(get_db)):
+async def get_email_messages(email_id: int, db: Session = Depends(get_db)):
     """Get messages for an email"""
     email = db.query(TempEmailModel).filter(TempEmailModel.id == email_id).first()
     if not email:
@@ -588,7 +588,7 @@ async def get_email_messages(email_id: str, db: Session = Depends(get_db)):
 
 
 @api_router.get("/emails/{email_id}/messages/{message_id}")
-async def get_message_detail(email_id: str, message_id: str, db: Session = Depends(get_db)):
+async def get_message_detail(email_id: int, message_id: str, db: Session = Depends(get_db)):
     """Get message detail"""
     email = db.query(TempEmailModel).filter(TempEmailModel.id == email_id).first()
     if not email:
@@ -602,7 +602,7 @@ async def get_message_detail(email_id: str, message_id: str, db: Session = Depen
 
 
 @api_router.post("/emails/{email_id}/refresh")
-async def refresh_messages(email_id: str, db: Session = Depends(get_db)):
+async def refresh_messages(email_id: int, db: Session = Depends(get_db)):
     """Refresh messages for an email"""
     email = db.query(TempEmailModel).filter(TempEmailModel.id == email_id).first()
     if not email:
@@ -617,7 +617,7 @@ async def refresh_messages(email_id: str, db: Session = Depends(get_db)):
 
 
 @api_router.delete("/emails/{email_id}")
-async def delete_email(email_id: str, db: Session = Depends(get_db)):
+async def delete_email(email_id: int, db: Session = Depends(get_db)):
     """Delete a temporary email"""
     email = db.query(TempEmailModel).filter(TempEmailModel.id == email_id).first()
     if not email:
@@ -630,7 +630,7 @@ async def delete_email(email_id: str, db: Session = Depends(get_db)):
 
 
 @api_router.post("/emails/{email_id}/extend-time")
-async def extend_email_time(email_id: str, db: Session = Depends(get_db)):
+async def extend_email_time(email_id: int, db: Session = Depends(get_db)):
     """Extend email expiry time by resetting to 10 minutes from now"""
     email = db.query(TempEmailModel).filter(TempEmailModel.id == email_id).first()
     if not email:
