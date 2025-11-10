@@ -878,7 +878,9 @@ async def create_email(request: CreateEmailRequest):
             created_at=email_doc["created_at"],
             expires_at=email_doc["expires_at"],
             provider=email_doc["provider"],
-            service_name=email_data["service_name"]
+            service_name=email_data["service_name"],
+            domain=email_doc.get("domain"),
+            username=email_doc.get("username")
         )
     except HTTPException:
         raise
