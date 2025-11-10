@@ -770,6 +770,11 @@ async def create_email_with_failover(username: Optional[str] = None, preferred_s
                 if not domains:
                     continue
                 domain = preferred_domain if preferred_domain in domains else domains[0]
+                if preferred_domain:
+                    if preferred_domain in domains:
+                        logging.info(f"✅ Using requested domain: {preferred_domain}")
+                    else:
+                        logging.warning(f"⚠️ Requested domain '{preferred_domain}' not found in {len(domains)} available domains, using: {domain}")
                 account_data = await create_guerrilla_account(username, domain)
                 
                 clear_provider_cooldown(provider)
