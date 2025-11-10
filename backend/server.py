@@ -771,12 +771,12 @@ async def create_email_with_failover(username: Optional[str] = None, preferred_s
                 domains = await get_guerrilla_domains()
                 if not domains:
                     continue
+                # NOTE: Guerrilla Mail API does not respect the domain parameter
+                # It always returns a random subdomain like @guerrillamailblock.com
+                # We pass the preferred_domain to the API, but it may be ignored
                 domain = preferred_domain if preferred_domain in domains else domains[0]
                 if preferred_domain:
-                    if preferred_domain in domains:
-                        logging.info(f"✅ Using requested domain: {preferred_domain}")
-                    else:
-                        logging.warning(f"⚠️ Requested domain '{preferred_domain}' not found in {len(domains)} available domains, using: {domain}")
+                    logging.warning(f"⚠️ Guerrilla Mail may not use requested domain '{preferred_domain}' - API assigns domains automatically")
                 account_data = await create_guerrilla_account(username, domain)
                 
                 clear_provider_cooldown(provider)
