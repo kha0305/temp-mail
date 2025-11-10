@@ -423,23 +423,30 @@ async def get_mailgw_domains():
 
 async def create_mailgw_account(address: str, password: str):
     """Create account on mail.gw"""
-    async with httpx.AsyncClient(timeout=10.0) as client:
+    async with httpx.AsyncClient(timeout=30.0) as client:
         try:
+            logging.info(f"📧 Creating Mail.gw account: {address}")
             response = await client.post(
                 f"{MAILGW_BASE_URL}/accounts",
                 json={"address": address, "password": password}
             )
             response.raise_for_status()
+            logging.info(f"✅ Mail.gw account created successfully")
             return response.json()
+        except httpx.TimeoutException as e:
+            logging.error(f"❌ Mail.gw timeout: {str(e)}")
+            raise Exception(f"Mail.gw timeout after 30s")
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 429:
                 logging.warning("⚠️ Mail.gw rate limited (429)")
                 raise HTTPException(status_code=429, detail="Mail.gw rate limited")
-            logging.error(f"❌ Mail.gw HTTP error: {e.response.status_code} - {e.response.text}")
-            raise HTTPException(status_code=e.response.status_code, detail=f"Mail.gw error: {e.response.status_code}")
+            error_text = e.response.text[:200] if e.response.text else "No error message"
+            logging.error(f"❌ Mail.gw HTTP error: {e.response.status_code} - {error_text}")
+            raise Exception(f"Mail.gw HTTP {e.response.status_code}")
         except Exception as e:
-            logging.error(f"❌ Mail.gw connection error: {e}")
-            raise Exception(f"Mail.gw connection failed: {str(e)}")
+            error_msg = str(e) if str(e) else repr(e)
+            logging.error(f"❌ Mail.gw connection error: {error_msg}")
+            raise Exception(f"Mail.gw failed: {error_msg}")
 
 
 async def get_mailgw_token(address: str, password: str):
