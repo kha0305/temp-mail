@@ -432,8 +432,8 @@ function App() {
         service: selectedService
       };
       
-      // Only include domain if a specific one is selected
-      if (selectedDomain && selectedDomain !== availableDomains[0]) {
+      // Always include selected domain to ensure correct email creation
+      if (selectedDomain) {
         payload.domain = selectedDomain;
       }
       
