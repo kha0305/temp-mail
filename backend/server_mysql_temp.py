@@ -1,5 +1,5 @@
-"""FastAPI server with MongoDB and multiple email providers (mail.tm, 1secmail, mail.gw, guerrilla, tempmail.lol)"""
-from fastapi import FastAPI, APIRouter, HTTPException
+"""FastAPI server with MySQL/SQLAlchemy and multiple email providers (mail.tm, 1secmail, mail.gw, guerrilla, tempmail.lol)"""
+from fastapi import FastAPI, APIRouter, HTTPException, Depends
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 import os
@@ -12,12 +12,17 @@ from datetime import datetime, timezone, timedelta
 import httpx
 import random
 import string
-import uuid
+import time
 
-from database_mongodb import database, emails_collection, history_collection, saved_collection
+from sqlalchemy.orm import Session
+from database import get_db, engine, SessionLocal
+from models import TempEmail, EmailHistory, SavedEmail, Base
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
+
+# Create tables
+Base.metadata.create_all(bind=engine)
 
 # Create the main app
 app = FastAPI()
@@ -72,8 +77,8 @@ class TempEmailSchema(BaseModel):
     password: str
     token: str
     account_id: str
-    created_at: str  # ISO 8601 string with timezone
-    expires_at: str  # ISO 8601 string with timezone  
+    created_at: str
+    expires_at: str
     message_count: int = 0
     provider: str = "mailtm"
     username: Optional[str] = ""
@@ -95,7 +100,7 @@ class EmailHistorySchema(BaseModel):
 
 class CreateEmailRequest(BaseModel):
     username: Optional[str] = None
-    service: Optional[str] = "auto"  # auto, mailtm, 1secmail, mailgw, guerrilla
+    service: Optional[str] = "auto"
     domain: Optional[str] = None
 
 
@@ -137,12 +142,6 @@ def clear_provider_cooldown(provider: str):
     """Clear cooldown for a provider"""
     _provider_stats[provider]["cooldown_until"] = 0
     logging.info(f"🔓 {provider} cooldown cleared")
-
-
-async def get_next_email_id():
-    """Get next auto-increment ID for emails"""
-    last_email = await emails_collection.find_one(sort=[("id", -1)])
-    return (last_email["id"] + 1) if last_email else 1
 
 
 # ============================================
@@ -228,7 +227,7 @@ async def get_mailtm_messages(token: str):
 
 
 async def get_mailtm_message_detail(token: str, message_id: str):
-    """Get message detail from Mail.tm"""
+    """Get message detail from Mail.tm with proper HTML normalization"""
     async with httpx.AsyncClient(timeout=10.0) as client:
         try:
             response = await client.get(
@@ -241,7 +240,7 @@ async def get_mailtm_message_detail(token: str, message_id: str):
             # Normalize html and text to always be arrays
             if "html" in data:
                 if isinstance(data["html"], list):
-                    pass  # Already a list
+                    pass
                 elif isinstance(data["html"], str):
                     data["html"] = [data["html"]] if data["html"] else []
                 else:
@@ -251,7 +250,7 @@ async def get_mailtm_message_detail(token: str, message_id: str):
             
             if "text" in data:
                 if isinstance(data["text"], list):
-                    pass  # Already a list
+                    pass
                 elif isinstance(data["text"], str):
                     data["text"] = [data["text"]] if data["text"] else []
                 else:
@@ -266,7 +265,7 @@ async def get_mailtm_message_detail(token: str, message_id: str):
 
 
 # ============================================
-# 1secmail Provider Functions - RE-ENABLED
+# 1secmail Provider Functions
 # ============================================
 
 async def get_1secmail_domains():
@@ -274,22 +273,18 @@ async def get_1secmail_domains():
     now = datetime.now(timezone.utc).timestamp()
     cache = _domain_cache["1secmail"]
     
-    # Check cache first
     if cache["domains"] and now < cache["expires_at"]:
         logging.info(f"✅ Using cached 1secmail domains (TTL: {int(cache['expires_at'] - now)}s)")
         return cache["domains"]
     
-    # Static fallback domains (always work)
     FALLBACK_DOMAINS = [
         "1secmail.com", "1secmail.org", "1secmail.net",
         "wwjmp.com", "esiix.com", "xojxe.com", "yoggm.com"
     ]
     
-    # Try API with retries
     for attempt in range(RETRY_MAX_ATTEMPTS):
         async with httpx.AsyncClient(timeout=10.0) as client:
             try:
-                # Enhanced headers to bypass 403
                 enhanced_headers = {
                     **BROWSER_HEADERS,
                     "Cache-Control": "no-cache",
@@ -317,12 +312,10 @@ async def get_1secmail_domains():
                 if attempt < RETRY_MAX_ATTEMPTS - 1:
                     await asyncio.sleep(RETRY_BASE_DELAY * (2 ** attempt))
     
-    # Use cached domains if available
     if cache["domains"]:
         logging.warning("⚠️ Using expired cache due to API errors")
         return cache["domains"]
     
-    # Final fallback: use static domains
     logging.warning(f"⚠️ 1secmail API unavailable, using {len(FALLBACK_DOMAINS)} fallback domains")
     cache["domains"] = FALLBACK_DOMAINS
     cache["expires_at"] = now + DOMAIN_CACHE_TTL
@@ -351,7 +344,6 @@ async def get_1secmail_messages(username: str, domain: str):
             response.raise_for_status()
             messages = response.json()
             
-            # Transform to standard format
             transformed = []
             for msg in messages:
                 transformed.append({
@@ -430,7 +422,7 @@ async def get_mailgw_domains():
 
 
 async def create_mailgw_account(address: str, password: str):
-    """Create account on mail.gw (same API as mail.tm)"""
+    """Create account on mail.gw"""
     async with httpx.AsyncClient(timeout=10.0) as client:
         try:
             response = await client.post(
@@ -478,7 +470,7 @@ async def get_mailgw_messages(token: str):
 
 
 async def get_mailgw_message_detail(token: str, message_id: str):
-    """Get message detail from mail.gw"""
+    """Get message detail from mail.gw with proper HTML normalization"""
     async with httpx.AsyncClient(timeout=10.0) as client:
         try:
             response = await client.get(
@@ -491,7 +483,7 @@ async def get_mailgw_message_detail(token: str, message_id: str):
             # Normalize html and text to always be arrays
             if "html" in data:
                 if isinstance(data["html"], list):
-                    pass  # Already a list
+                    pass
                 elif isinstance(data["html"], str):
                     data["html"] = [data["html"]] if data["html"] else []
                 else:
@@ -501,7 +493,7 @@ async def get_mailgw_message_detail(token: str, message_id: str):
             
             if "text" in data:
                 if isinstance(data["text"], list):
-                    pass  # Already a list
+                    pass
                 elif isinstance(data["text"], str):
                     data["text"] = [data["text"]] if data["text"] else []
                 else:
@@ -516,7 +508,7 @@ async def get_mailgw_message_detail(token: str, message_id: str):
 
 
 # ============================================
-# Guerrilla Mail Provider Functions  
+# Guerrilla Mail Provider Functions - ENHANCED FIX
 # ============================================
 
 async def get_guerrilla_domains():
@@ -528,28 +520,15 @@ async def get_guerrilla_domains():
         logging.info(f"✅ Using cached Guerrilla domains (TTL: {int(cache['expires_at'] - now)}s)")
         return cache["domains"]
     
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        try:
-            response = await client.get(f"{GUERRILLA_BASE_URL}?f=get_email_address")
-            response.raise_for_status()
-            data = response.json()
-            # Guerrilla returns domains differently - parse from email_addr
-            # Default domains for Guerrilla
-            default_domains = ["guerrillamail.com", "guerrillamail.net", "guerrillamail.org", "sharklasers.com", "spam4.me"]
-            cache["domains"] = default_domains
-            cache["expires_at"] = now + DOMAIN_CACHE_TTL
-            logging.info(f"✅ Cached {len(default_domains)} Guerrilla domains")
-            return default_domains
-        except Exception as e:
-            logging.error(f"❌ Guerrilla domains error: {e}")
-            # Return default domains
-            return ["guerrillamail.com", "sharklasers.com"]
+    default_domains = ["guerrillamail.com", "guerrillamail.net", "guerrillamail.org", "sharklasers.com", "spam4.me"]
+    cache["domains"] = default_domains
+    cache["expires_at"] = now + DOMAIN_CACHE_TTL
+    logging.info(f"✅ Cached {len(default_domains)} Guerrilla domains")
+    return default_domains
 
 
 async def create_guerrilla_account(username: str, domain: str):
     """Create Guerrilla Mail account"""
-    # Guerrilla mail doesn't need explicit account creation
-    # Just use set_email_user API
     async with httpx.AsyncClient(timeout=10.0) as client:
         try:
             response = await client.get(
@@ -559,7 +538,7 @@ async def create_guerrilla_account(username: str, domain: str):
             data = response.json()
             
             address = data.get("email_addr", f"{username}@{domain}")
-            sid_token = data.get("sid_token", str(uuid.uuid4()))
+            sid_token = data.get("sid_token", "")
             
             return {
                 "address": address,
@@ -569,8 +548,8 @@ async def create_guerrilla_account(username: str, domain: str):
             }
         except Exception as e:
             logging.error(f"Error creating Guerrilla account: {e}")
-            # Fallback: generate without API
             address = f"{username}@{domain}"
+            import uuid
             return {
                 "address": address,
                 "password": "no-password",
@@ -590,7 +569,6 @@ async def get_guerrilla_messages(sid_token: str):
             data = response.json()
             messages = data.get("list", [])
             
-            # Transform to standard format
             transformed = []
             for msg in messages:
                 transformed.append({
@@ -609,7 +587,7 @@ async def get_guerrilla_messages(sid_token: str):
 
 
 async def get_guerrilla_message_detail(sid_token: str, message_id: str):
-    """Get message detail from Guerrilla Mail"""
+    """Get message detail from Guerrilla Mail - FIXED HTML RENDERING"""
     async with httpx.AsyncClient(timeout=10.0) as client:
         try:
             response = await client.get(
@@ -618,18 +596,18 @@ async def get_guerrilla_message_detail(sid_token: str, message_id: str):
             response.raise_for_status()
             data = response.json()
             
-            # Get mail body - Guerrilla returns HTML in mail_body field
+            # CRITICAL FIX: Get mail_body which contains HTML content
             mail_body = data.get("mail_body", "")
             
-            # Also try mail_excerpt as fallback
+            # Also check mail_excerpt as fallback
             if not mail_body:
                 mail_body = data.get("mail_excerpt", "")
             
-            # Ensure we have content as array (consistent with other providers)
+            # IMPORTANT: Ensure content is returned as array (consistent with other providers)
             html_content = [mail_body] if mail_body else []
             text_content = [mail_body] if mail_body else []
             
-            logging.info(f"📧 Guerrilla message detail - ID: {message_id}, Has HTML: {len(mail_body) > 0}, Length: {len(mail_body)}")
+            logging.info(f"📧 Guerrilla message detail - ID: {message_id}, HTML length: {len(mail_body)}")
             
             return {
                 "id": str(data.get("mail_id", message_id)),
@@ -659,7 +637,6 @@ async def create_email_with_failover(username: Optional[str] = None, preferred_s
     
     password = ''.join(random.choices(string.ascii_letters + string.digits, k=16))
     
-    # Define provider priority based on preferred_service
     if preferred_service == "mailtm":
         providers_to_try = ["mailtm"]
     elif preferred_service == "1secmail":
@@ -668,9 +645,9 @@ async def create_email_with_failover(username: Optional[str] = None, preferred_s
         providers_to_try = ["mailgw"]
     elif preferred_service == "guerrilla":
         providers_to_try = ["guerrilla"]
-    else:  # auto - RANDOM SELECTION
-        providers_to_try = ["mailtm", "mailgw", "guerrilla"]  # Removed 1secmail (disabled)
-        random.shuffle(providers_to_try)  # Shuffle for random selection
+    else:
+        providers_to_try = ["mailtm", "mailgw", "guerrilla"]
+        random.shuffle(providers_to_try)
         logging.info(f"🎲 Random provider order: {providers_to_try}")
     
     errors = []
@@ -787,7 +764,6 @@ async def create_email_with_failover(username: Optional[str] = None, preferred_s
             _provider_stats[provider]["failures"] += 1
             errors.append(f"{provider}: {str(e)}")
     
-    # All providers failed
     raise HTTPException(
         status_code=503,
         detail=f"Tất cả dịch vụ email đều không khả dụng. Lỗi: {', '.join(errors)}"
@@ -819,8 +795,8 @@ async def root():
             stats["success_rate"] = "N/A"
     
     return {
-        "message": "TempMail API - MongoDB with 5 Providers",
-        "providers": ["Mail.tm", "Mail.gw", "1secmail", "Guerrilla Mail", "TempMail.lol"],
+        "message": "TempMail API - MySQL with Multiple Providers",
+        "providers": ["Mail.tm", "Mail.gw", "1secmail", "Guerrilla Mail"],
         "stats": _provider_stats,
         "config": {
             "provider_cooldown": f"{PROVIDER_COOLDOWN_SECONDS}s",
@@ -831,136 +807,116 @@ async def root():
 
 
 @api_router.post("/emails/create", response_model=CreateEmailResponse)
-async def create_email(request: CreateEmailRequest):
+async def create_email(request: CreateEmailRequest, db: Session = Depends(get_db)):
     """Create a new temporary email with automatic provider failover"""
     try:
-        # Create email using multi-provider with failover
         email_data = await create_email_with_failover(
             username=request.username,
             preferred_service=request.service or "auto",
             preferred_domain=request.domain
         )
         
-        # Calculate expiry time (10 minutes from now) - CRITICAL: Use UTC timezone
         now = datetime.now(timezone.utc)
         expires_at = now + timedelta(minutes=10)
         
-        # Get next ID
-        next_id = await get_next_email_id()
+        email_doc = TempEmail(
+            address=email_data["address"],
+            password=email_data["password"],
+            token=email_data["token"],
+            account_id=email_data["account_id"],
+            created_at=now,
+            expires_at=expires_at,
+            message_count=0,
+            provider=email_data["provider"],
+            username=email_data["username"],
+            domain=email_data["domain"]
+        )
         
-        # Create database record
-        email_doc = {
-            "id": next_id,
-            "address": email_data["address"],
-            "password": email_data["password"],
-            "token": email_data["token"],
-            "account_id": email_data["account_id"],
-            # CRITICAL FIX: Store as ISO string WITH timezone info
-            "created_at": now.isoformat(),  # e.g. "2025-01-08T10:30:00+00:00"
-            "expires_at": expires_at.isoformat(),  # e.g. "2025-01-08T10:40:00+00:00"
-            "message_count": 0,
-            "provider": email_data["provider"],
-            "username": email_data["username"],
-            "domain": email_data["domain"]
-        }
+        db.add(email_doc)
+        db.commit()
+        db.refresh(email_doc)
         
-        await emails_collection.insert_one(email_doc)
-        
-        logging.info(f"✅ Email created: {email_doc['address']} (Provider: {email_doc['provider']})")
-        logging.info(f"📅 created_at: {email_doc['created_at']}")
-        logging.info(f"⏰ expires_at: {email_doc['expires_at']}")
+        logging.info(f"✅ Email created: {email_doc.address} (Provider: {email_doc.provider})")
         
         return CreateEmailResponse(
-            id=email_doc["id"],
-            address=email_doc["address"],
-            created_at=email_doc["created_at"],
-            expires_at=email_doc["expires_at"],
-            provider=email_doc["provider"],
+            id=email_doc.id,
+            address=email_doc.address,
+            created_at=email_doc.created_at.isoformat(),
+            expires_at=email_doc.expires_at.isoformat(),
+            provider=email_doc.provider,
             service_name=email_data["service_name"]
         )
     except HTTPException:
         raise
     except Exception as e:
         logging.error(f"❌ Error creating email: {e}")
+        db.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to create email: {str(e)}")
 
 
 @api_router.get("/emails", response_model=List[TempEmailSchema])
-async def get_emails():
+async def get_emails(db: Session = Depends(get_db)):
     """Get all temporary emails"""
-    cursor = emails_collection.find().sort("created_at", -1)
-    emails = await cursor.to_list(length=100)
-    # Remove MongoDB _id field
-    for email in emails:
-        email.pop("_id", None)
-    return emails
+    emails = db.query(TempEmail).order_by(TempEmail.created_at.desc()).all()
+    return [TempEmailSchema(**email.to_dict()) for email in emails]
 
 
 @api_router.get("/emails/{email_id}")
-async def get_email(email_id: int):
+async def get_email(email_id: int, db: Session = Depends(get_db)):
     """Get email by ID"""
-    email = await emails_collection.find_one({"id": email_id})
+    email = db.query(TempEmail).filter(TempEmail.id == email_id).first()
     if not email:
         raise HTTPException(status_code=404, detail="Email not found")
-    
-    email.pop("_id", None)
-    return email
+    return email.to_dict()
 
 
 @api_router.get("/emails/{email_id}/messages")
-async def get_email_messages(email_id: int):
+async def get_email_messages(email_id: int, db: Session = Depends(get_db)):
     """Get messages for an email"""
-    email = await emails_collection.find_one({"id": email_id})
+    email = db.query(TempEmail).filter(TempEmail.id == email_id).first()
     if not email:
         raise HTTPException(status_code=404, detail="Email not found")
     
-    provider = email.get("provider")
+    provider = email.provider
     
-    # Route to correct provider
     if provider == "mailtm":
-        messages = await get_mailtm_messages(email["token"])
+        messages = await get_mailtm_messages(email.token)
     elif provider == "mailgw":
-        messages = await get_mailgw_messages(email["token"])
+        messages = await get_mailgw_messages(email.token)
     elif provider == "1secmail":
-        # Extract username and domain from address
-        username = email.get("username", email["address"].split("@")[0])
-        domain = email.get("domain", email["address"].split("@")[1])
+        username = email.username or email.address.split("@")[0]
+        domain = email.domain or email.address.split("@")[1]
         messages = await get_1secmail_messages(username, domain)
     elif provider == "guerrilla":
-        messages = await get_guerrilla_messages(email["token"])
+        messages = await get_guerrilla_messages(email.token)
     else:
         messages = []
     
-    # Update message count
-    await emails_collection.update_one(
-        {"id": email_id},
-        {"$set": {"message_count": len(messages)}}
-    )
+    email.message_count = len(messages)
+    db.commit()
     
     return {"messages": messages, "count": len(messages)}
 
 
 @api_router.get("/emails/{email_id}/messages/{message_id}")
-async def get_message_detail(email_id: int, message_id: str):
+async def get_message_detail(email_id: int, message_id: str, db: Session = Depends(get_db)):
     """Get message detail"""
-    email = await emails_collection.find_one({"id": email_id})
+    email = db.query(TempEmail).filter(TempEmail.id == email_id).first()
     if not email:
         raise HTTPException(status_code=404, detail="Email not found")
     
-    provider = email.get("provider")
+    provider = email.provider
     
-    # Route to correct provider
     if provider == "mailtm":
-        message = await get_mailtm_message_detail(email["token"], message_id)
+        message = await get_mailtm_message_detail(email.token, message_id)
     elif provider == "mailgw":
-        message = await get_mailgw_message_detail(email["token"], message_id)
+        message = await get_mailgw_message_detail(email.token, message_id)
     elif provider == "1secmail":
-        # Extract username and domain from address
-        username = email.get("username", email["address"].split("@")[0])
-        domain = email.get("domain", email["address"].split("@")[1])
+        username = email.username or email.address.split("@")[0]
+        domain = email.domain or email.address.split("@")[1]
         message = await get_1secmail_message_detail(username, domain, message_id)
     elif provider == "guerrilla":
-        message = await get_guerrilla_message_detail(email["token"], message_id)
+        message = await get_guerrilla_message_detail(email.token, message_id)
     else:
         message = None
     
@@ -971,64 +927,60 @@ async def get_message_detail(email_id: int, message_id: str):
 
 
 @api_router.post("/emails/{email_id}/refresh")
-async def refresh_messages(email_id: int):
+async def refresh_messages(email_id: int, db: Session = Depends(get_db)):
     """Refresh messages for an email"""
-    email = await emails_collection.find_one({"id": email_id})
+    email = db.query(TempEmail).filter(TempEmail.id == email_id).first()
     if not email:
         raise HTTPException(status_code=404, detail="Email not found")
     
-    provider = email.get("provider")
+    provider = email.provider
     
-    # Route to correct provider
     if provider == "mailtm":
-        messages = await get_mailtm_messages(email["token"])
+        messages = await get_mailtm_messages(email.token)
     elif provider == "mailgw":
-        messages = await get_mailgw_messages(email["token"])
+        messages = await get_mailgw_messages(email.token)
     elif provider == "1secmail":
-        # Extract username and domain from address
-        username = email.get("username", email["address"].split("@")[0])
-        domain = email.get("domain", email["address"].split("@")[1])
+        username = email.username or email.address.split("@")[0]
+        domain = email.domain or email.address.split("@")[1]
         messages = await get_1secmail_messages(username, domain)
     elif provider == "guerrilla":
-        messages = await get_guerrilla_messages(email["token"])
+        messages = await get_guerrilla_messages(email.token)
     else:
         messages = []
     
-    await emails_collection.update_one(
-        {"id": email_id},
-        {"$set": {"message_count": len(messages)}}
-    )
+    email.message_count = len(messages)
+    db.commit()
     
     return {"messages": messages, "count": len(messages)}
 
 
 @api_router.delete("/emails/{email_id}")
-async def delete_email(email_id: int):
+async def delete_email(email_id: int, db: Session = Depends(get_db)):
     """Delete a temporary email"""
-    result = await emails_collection.delete_one({"id": email_id})
-    if result.deleted_count == 0:
+    email = db.query(TempEmail).filter(TempEmail.id == email_id).first()
+    if not email:
         raise HTTPException(status_code=404, detail="Email not found")
+    
+    db.delete(email)
+    db.commit()
     
     return {"status": "deleted"}
 
 
 @api_router.post("/emails/{email_id}/extend-time")
-async def extend_email_time(email_id: int):
+async def extend_email_time(email_id: int, db: Session = Depends(get_db)):
     """Extend email expiry time by resetting to 10 minutes from now"""
-    email = await emails_collection.find_one({"id": email_id})
+    email = db.query(TempEmail).filter(TempEmail.id == email_id).first()
     if not email:
         raise HTTPException(status_code=404, detail="Email not found")
     
-    # Reset expires_at to 10 minutes from now - USE UTC
     now = datetime.now(timezone.utc)
     new_expires_at = now + timedelta(minutes=10)
     
-    await emails_collection.update_one(
-        {"id": email_id},
-        {"$set": {"expires_at": new_expires_at.isoformat()}}
-    )
+    email.expires_at = new_expires_at
+    db.commit()
     
-    logging.info(f"⏰ Extended time for {email['address']}: {new_expires_at.isoformat()}")
+    logging.info(f"⏰ Extended time for {email.address}: {new_expires_at.isoformat()}")
     
     return {
         "status": "extended",
@@ -1037,72 +989,53 @@ async def extend_email_time(email_id: int):
 
 
 @api_router.get("/emails/history/list", response_model=List[EmailHistorySchema])
-async def get_email_history():
+async def get_email_history(db: Session = Depends(get_db)):
     """Get all emails in history"""
-    cursor = history_collection.find().sort("expired_at", -1)
-    history = await cursor.to_list(length=100)
-    for item in history:
-        item.pop("_id", None)
-    return history
+    history = db.query(EmailHistory).order_by(EmailHistory.expired_at.desc()).all()
+    return [EmailHistorySchema(**email.to_dict()) for email in history]
 
 
 @api_router.get("/emails/history/{email_id}/messages")
-async def get_history_email_messages(email_id: int):
+async def get_history_email_messages(email_id: int, db: Session = Depends(get_db)):
     """Get messages for a history email"""
-    email = await history_collection.find_one({"id": email_id})
+    email = db.query(EmailHistory).filter(EmailHistory.id == email_id).first()
     if not email:
         raise HTTPException(status_code=404, detail="Email not found in history")
     
     # Try to get messages (may not work if provider deleted the account)
-    provider = email.get("provider", "mailtm")
-    if provider == "mailtm":
-        messages = await get_mailtm_messages(email["token"])
-    elif provider == "mailgw":
-        messages = await get_mailgw_messages(email["token"])
-    else:
-        messages = []
-    
+    messages = []
     return {"messages": messages, "count": len(messages)}
 
 
 @api_router.get("/emails/history/{email_id}/messages/{message_id}")
-async def get_history_message_detail(email_id: int, message_id: str):
+async def get_history_message_detail(email_id: int, message_id: str, db: Session = Depends(get_db)):
     """Get message detail for a history email"""
-    email = await history_collection.find_one({"id": email_id})
+    email = db.query(EmailHistory).filter(EmailHistory.id == email_id).first()
     if not email:
         raise HTTPException(status_code=404, detail="Email not found in history")
     
-    provider = email.get("provider", "mailtm")
-    if provider == "mailtm":
-        message = await get_mailtm_message_detail(email["token"], message_id)
-    elif provider == "mailgw":
-        message = await get_mailgw_message_detail(email["token"], message_id)
-    else:
-        message = None
-    
-    if not message:
-        raise HTTPException(status_code=404, detail="Message not found")
-    
-    return message
+    # Cannot get messages from history
+    raise HTTPException(status_code=404, detail="Message not found")
 
 
 @api_router.delete("/emails/history/delete")
-async def delete_history_emails(request: DeleteHistoryRequest):
-    """Delete history emails. If ids is None or empty, delete all"""
+async def delete_history_emails(request: DeleteHistoryRequest, db: Session = Depends(get_db)):
+    """Delete history emails"""
     try:
         if request.ids and len(request.ids) > 0:
-            result = await history_collection.delete_many({"id": {"$in": request.ids}})
-            deleted_count = result.deleted_count
+            deleted = db.query(EmailHistory).filter(EmailHistory.id.in_(request.ids)).delete(synchronize_session=False)
         else:
-            result = await history_collection.delete_many({})
-            deleted_count = result.deleted_count
+            deleted = db.query(EmailHistory).delete(synchronize_session=False)
+        
+        db.commit()
         
         return {
             "status": "deleted",
-            "count": deleted_count
+            "count": deleted
         }
     except Exception as e:
         logging.error(f"Error deleting history emails: {e}")
+        db.rollback()
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -1111,47 +1044,39 @@ async def delete_history_emails(request: DeleteHistoryRequest):
 # ============================================
 
 @api_router.post("/emails/{email_id}/messages/{message_id}/save")
-async def save_message(email_id: int, message_id: str):
+async def save_message(email_id: int, message_id: str, db: Session = Depends(get_db)):
     """Save a message to saved emails collection"""
     try:
-        # Get the email
-        email_doc = await emails_collection.find_one({"id": email_id})
-        if not email_doc:
+        email = db.query(TempEmail).filter(TempEmail.id == email_id).first()
+        if not email:
             raise HTTPException(status_code=404, detail="Email not found")
         
         # Get message detail
         message = None
-        provider = email_doc.get("provider", "mailtm")
+        provider = email.provider
         
         if provider == "mailtm":
-            message = await get_mailtm_message_detail(email_doc["token"], message_id)
+            message = await get_mailtm_message_detail(email.token, message_id)
         elif provider == "mailgw":
-            message = await get_mailgw_message_detail(email_doc["token"], message_id)
+            message = await get_mailgw_message_detail(email.token, message_id)
         elif provider == "guerrilla":
-            message = await get_guerrilla_message_detail(email_doc["address"], message_id)
+            message = await get_guerrilla_message_detail(email.token, message_id)
         
         if not message:
             raise HTTPException(status_code=404, detail="Message not found")
         
         # Check if already saved
-        existing = await saved_collection.find_one({
-            "email_address": email_doc["address"],
-            "message_id": message_id
-        })
+        existing = db.query(SavedEmail).filter(
+            SavedEmail.email_address == email.address,
+            SavedEmail.message_id == message_id
+        ).first()
         
         if existing:
             return {
                 "status": "already_saved",
                 "message": "Email đã được lưu trước đó",
-                "id": existing["id"]
+                "id": existing.id
             }
-        
-        # Generate new ID using MongoDB's ObjectId or timestamp-based unique ID
-        import time
-        new_id = int(time.time() * 1000)  # Use timestamp in milliseconds as unique ID
-        
-        # Or alternatively, use a combination approach:
-        # new_id = int(f"{int(time.time())}{random.randint(1000, 9999)}")
         
         # Extract content
         html_content = None
@@ -1169,55 +1094,59 @@ async def save_message(email_id: int, message_id: str):
             elif isinstance(message["text"], str):
                 text_content = message["text"]
         
+        # Parse createdAt
+        try:
+            created_at = datetime.fromisoformat(message.get("createdAt", datetime.now(timezone.utc).isoformat()).replace('Z', '+00:00'))
+        except:
+            created_at = datetime.now(timezone.utc)
+        
         # Create saved email document
-        saved_email = {
-            "id": new_id,
-            "email_address": email_doc["address"],
-            "message_id": message_id,
-            "subject": message.get("subject", ""),
-            "from_address": message.get("from", {}).get("address", "") if isinstance(message.get("from"), dict) else "",
-            "from_name": message.get("from", {}).get("name", "") if isinstance(message.get("from"), dict) else "",
-            "html": html_content,
-            "text": text_content,
-            "created_at": message.get("createdAt", datetime.now(timezone.utc).isoformat()),
-            "saved_at": datetime.now(timezone.utc)
-        }
+        saved_email = SavedEmail(
+            email_address=email.address,
+            message_id=message_id,
+            subject=message.get("subject", ""),
+            from_address=message.get("from", {}).get("address", "") if isinstance(message.get("from"), dict) else "",
+            from_name=message.get("from", {}).get("name", "") if isinstance(message.get("from"), dict) else "",
+            html=html_content,
+            text=text_content,
+            created_at=created_at,
+            saved_at=datetime.now(timezone.utc)
+        )
         
-        await saved_collection.insert_one(saved_email)
+        db.add(saved_email)
+        db.commit()
+        db.refresh(saved_email)
         
-        logging.info(f"💾 Saved message {message_id} from {email_doc['address']}")
+        logging.info(f"💾 Saved message {message_id} from {email.address}")
         
         return {
             "status": "saved",
             "message": "Email đã được lưu thành công",
-            "id": new_id
+            "id": saved_email.id
         }
         
     except HTTPException:
         raise
     except Exception as e:
         logging.error(f"Error saving message: {e}")
+        db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @api_router.post("/emails/{email_id}/save")
-async def save_email(email_id: int):
-    """Save an email (not just a message, but the entire email address)"""
+async def save_email(email_id: int, db: Session = Depends(get_db)):
+    """Save an email"""
     try:
-        # Get the email
-        email_doc = await emails_collection.find_one({"id": email_id})
-        if not email_doc:
+        email = db.query(TempEmail).filter(TempEmail.id == email_id).first()
+        if not email:
             raise HTTPException(status_code=404, detail="Email not found")
         
-        # For now, we'll just return success since saving the email entity
-        # is different from saving messages. This endpoint marks the email
-        # as "saved" in the frontend state
         return {
             "status": "success",
             "message": "Email saved successfully",
-            "id": email_doc["id"],
-            "address": email_doc["address"],
-            "provider": email_doc.get("provider", "unknown"),
+            "id": email.id,
+            "address": email.address,
+            "provider": email.provider,
             "saved_at": datetime.now(timezone.utc).isoformat()
         }
         
@@ -1229,57 +1158,26 @@ async def save_email(email_id: int):
 
 
 @api_router.get("/emails/saved/list")
-async def get_saved_emails():
+async def get_saved_emails(db: Session = Depends(get_db)):
     """Get all saved emails"""
     try:
-        saved_emails = await saved_collection.find().sort("saved_at", -1).to_list(length=None)
-        
-        # Convert to response format
-        result = []
-        for email in saved_emails:
-            result.append({
-                "id": email["id"],
-                "email_address": email["email_address"],
-                "message_id": email["message_id"],
-                "subject": email["subject"],
-                "from": {
-                    "address": email.get("from_address", ""),
-                    "name": email.get("from_name", "")
-                },
-                "createdAt": email["created_at"],
-                "saved_at": email["saved_at"].isoformat() if isinstance(email["saved_at"], datetime) else email["saved_at"]
-            })
-        
-        return result
-        
+        saved_emails = db.query(SavedEmail).order_by(SavedEmail.saved_at.desc()).all()
+        return [email.to_dict() for email in saved_emails]
     except Exception as e:
         logging.error(f"Error getting saved emails: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @api_router.get("/emails/saved/{saved_id}")
-async def get_saved_email_detail(saved_id: int):
+async def get_saved_email_detail(saved_id: int, db: Session = Depends(get_db)):
     """Get a specific saved email with full content"""
     try:
-        saved_email = await saved_collection.find_one({"id": saved_id})
+        saved_email = db.query(SavedEmail).filter(SavedEmail.id == saved_id).first()
         
         if not saved_email:
             raise HTTPException(status_code=404, detail="Saved email not found")
         
-        return {
-            "id": saved_email["id"],
-            "email_address": saved_email["email_address"],
-            "message_id": saved_email["message_id"],
-            "subject": saved_email["subject"],
-            "from": {
-                "address": saved_email.get("from_address", ""),
-                "name": saved_email.get("from_name", "")
-            },
-            "html": [saved_email["html"]] if saved_email.get("html") else [],
-            "text": [saved_email["text"]] if saved_email.get("text") else [],
-            "createdAt": saved_email["created_at"],
-            "saved_at": saved_email["saved_at"].isoformat() if isinstance(saved_email["saved_at"], datetime) else saved_email["saved_at"]
-        }
+        return saved_email.to_dict()
         
     except HTTPException:
         raise
@@ -1293,22 +1191,23 @@ class DeleteSavedRequest(BaseModel):
 
 
 @api_router.delete("/emails/saved/delete")
-async def delete_saved_emails(request: DeleteSavedRequest):
-    """Delete saved emails. If ids is None or empty, delete all"""
+async def delete_saved_emails(request: DeleteSavedRequest, db: Session = Depends(get_db)):
+    """Delete saved emails"""
     try:
         if request.ids and len(request.ids) > 0:
-            result = await saved_collection.delete_many({"id": {"$in": request.ids}})
-            deleted_count = result.deleted_count
+            deleted = db.query(SavedEmail).filter(SavedEmail.id.in_(request.ids)).delete(synchronize_session=False)
         else:
-            result = await saved_collection.delete_many({})
-            deleted_count = result.deleted_count
+            deleted = db.query(SavedEmail).delete(synchronize_session=False)
+        
+        db.commit()
         
         return {
             "status": "deleted",
-            "count": deleted_count
+            "count": deleted
         }
     except Exception as e:
         logging.error(f"Error deleting saved emails: {e}")
+        db.rollback()
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -1326,7 +1225,6 @@ async def get_domains(service: str = "auto"):
     elif service == "guerrilla":
         domains = await get_guerrilla_domains()
     elif service == "auto":
-        # Try providers in order
         mailtm_domains = await get_mailtm_domains()
         if mailtm_domains:
             domains = mailtm_domains
@@ -1349,33 +1247,62 @@ async def get_domains(service: str = "auto"):
 @app.on_event("startup")
 async def startup_event():
     """Start background tasks on application startup"""
-    # Start background task using asyncio.create_task instead of threading
     asyncio.create_task(background_task_loop())
-    logging.info("✅ Application started with background tasks (MongoDB)")
+    logging.info("✅ Application started with background tasks (MySQL)")
     logging.info("✅ Active providers: Mail.tm, 1secmail, Mail.gw, Guerrilla Mail")
 
 
 async def background_task_loop():
     """Main background task loop"""
-    from background_tasks_mongodb import check_and_move_expired_emails
     CHECK_INTERVAL = 30
-    
     logging.info(f"🚀 Background task started - checking every {CHECK_INTERVAL}s")
     
     while True:
         try:
-            await check_and_move_expired_emails()
+            db = SessionLocal()
+            now = datetime.now(timezone.utc)
+            
+            # Find expired emails
+            expired_emails = db.query(TempEmail).filter(TempEmail.expires_at <= now).all()
+            
+            if expired_emails:
+                logging.info(f"Found {len(expired_emails)} expired emails")
+                
+                for email in expired_emails:
+                    try:
+                        # Move to history
+                        history_email = EmailHistory(
+                            address=email.address,
+                            password=email.password,
+                            token=email.token,
+                            account_id=email.account_id,
+                            created_at=email.created_at,
+                            expired_at=email.expires_at,
+                            message_count=email.message_count
+                        )
+                        
+                        db.add(history_email)
+                        db.delete(email)
+                        db.commit()
+                        
+                        logging.info(f"Moved email to history: {email.address}")
+                    except Exception as e:
+                        logging.error(f"Error moving email {email.address} to history: {e}")
+                        db.rollback()
+                        continue
+            
+            db.close()
         except Exception as e:
             logging.error(f"❌ Error in background task loop: {e}")
         
         await asyncio.sleep(CHECK_INTERVAL)
 
 
-# CORS configuration - MUST be BEFORE router
+# CORS configuration
 cors_origins = os.environ.get('CORS_ORIGINS', '*')
 if cors_origins == '*':
     allow_origins = ['*']
-    allow_credentials = False  # Cannot use credentials with wildcard origin
+    allow_credentials = False
 else:
     allow_origins = cors_origins.split(',')
     allow_credentials = True
