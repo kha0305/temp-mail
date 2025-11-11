@@ -236,6 +236,31 @@ user_problem_statement: |
   - Port: 3306
 
 backend:
+  - task: "Xóa Guerrilla Mail khỏi auto mode provider list"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: |
+          ✅ ĐÃ XÓA GUERRILLA MAIL KHỎI AUTO MODE
+          
+          File: /app/backend/server.py (Line 651-663)
+          
+          Thay đổi:
+          - Auto mode trước: ["mailtm", "mailgw", "guerrilla", "1secmail"]
+          - Auto mode sau: ["mailtm", "mailgw", "1secmail"]
+          
+          Kết quả:
+          - Guerrilla Mail không còn trong danh sách random providers
+          - User không thể tạo email với Guerrilla qua auto mode
+          - Các Guerrilla functions vẫn giữ nguyên trong code
+          - Backend chỉ rotate giữa 3 providers: Mail.tm, Mail.gw, 1secmail
+
   - task: "Chuyển đổi hoàn toàn sang MySQL và fix Guerrilla Mail HTML"
     implemented: true
     working: "NA"
