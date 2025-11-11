@@ -377,8 +377,9 @@ function App() {
   }, [activeTab]);
 
   const formatTime = (seconds) => {
-    // Always display 0:00 as per user requirement
-    return '0:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   const loadEmails = async () => {
