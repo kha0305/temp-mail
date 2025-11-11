@@ -663,9 +663,11 @@ async def create_email_with_failover(username: Optional[str] = None, preferred_s
         logging.info(f"🎲 Random provider order: {providers_to_try}")
     
     errors = []
+    skipped_providers = []
     
     for provider in providers_to_try:
         if is_provider_in_cooldown(provider):
+            skipped_providers.append(provider)
             logging.info(f"⏭️ Skipping {provider} (in cooldown)")
             continue
         
