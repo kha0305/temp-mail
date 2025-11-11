@@ -1295,7 +1295,7 @@ async def startup_event():
     """Start background tasks on application startup"""
     asyncio.create_task(background_task_loop())
     logging.info("✅ Application started with background tasks (MySQL)")
-    logging.info("✅ Active providers: Mail.tm, 1secmail, Mail.gw, Guerrilla Mail")
+    logging.info("✅ Active providers: Mail.tm, 1secmail, Mail.gw (Guerrilla Mail removed)")
 
 
 async def background_task_loop():
