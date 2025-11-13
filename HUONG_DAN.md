@@ -1,107 +1,120 @@
-# TempMail - Trình Tạo Email Tạm Thời
+# HƯỚNG DẪN CHI TIẾT - TEMPMAIL
 
-Ứng dụng web full-stack để tạo địa chỉ email tạm thời với hỗ trợ nhiều nhà cung cấp dịch vụ. Được xây dựng với backend FastAPI (Python), frontend React và cơ sở dữ liệu MySQL.
+## Mục lục
 
-## 🌟 Tính Năng
+1. [Cài đặt môi trường](#1-cài-đặt-môi-trường)
+2. [Cấu hình MySQL](#2-cấu-hình-mysql)
+3. [Chạy ứng dụng](#3-chạy-ứng-dụng)
+4. [Sử dụng ứng dụng](#4-sử-dụng-ứng-dụng)
+5. [Xử lý lỗi thường gặp](#5-xử-lý-lỗi-thường-gặp)
 
-- ✉️ **Tự động tạo email tạm** - Tự động tạo email mới khi bạn mở ứng dụng
-- ⏰ **Hết hạn sau 10 phút** - Email tự động hết hạn sau 10 phút
-- 🔄 **Tự động làm mới** - Tự động tạo email mới khi email hiện tại hết hạn
-- 📧 **Nhiều nhà cung cấp**: Mail.tm, 1secmail, Mail.gw, Guerrilla Mail
-- 💾 **Lưu email** - Lưu các email quan trọng để xem lại sau
-- 📜 **Lịch sử email** - Xem email đã hết hạn với đầy đủ tin nhắn
-- 🎨 **Giao diện hiện đại** - Theme tối đẹp mắt với hiệu ứng mượt mà
-- 🔐 **Xem nội dung HTML/Text** - Hỗ trợ đầy đủ email HTML và văn bản thuần
+---
 
-## 🛠️ Công Nghệ Sử Dụng
+## 1. Cài đặt môi trường
 
-**Backend:**
-- FastAPI (Python 3.9+)
-- MySQL 8.0+ với SQLAlchemy ORM
-- httpx cho async API calls
-- Background tasks cho tự động hết hạn email
+### 1.1 Cài đặt Python (Backend)
 
-**Frontend:**
-- React 18
-- Tailwind CSS
-- Axios cho API calls
-- Lucide React icons
-- Sonner cho toast notifications
-
-## 📋 Yêu Cầu Hệ Thống
-
-Trước khi bắt đầu, đảm bảo bạn đã cài đặt:
-
-1. **Python 3.9 hoặc cao hơn**
-   - Tải từ: https://www.python.org/downloads/
-   - Kiểm tra: `python --version` hoặc `python3 --version`
-
-2. **Node.js 18 hoặc cao hơn & Yarn**
-   - Tải Node.js từ: https://nodejs.org/
-   - Cài Yarn: `npm install -g yarn`
-   - Kiểm tra: `node --version` && `yarn --version`
-
-3. **MySQL 8.0 hoặc cao hơn**
-   - Tải từ: https://dev.mysql.com/downloads/mysql/
-   - Hoặc dùng package manager:
-     - macOS: `brew install mysql`
-     - Ubuntu/Debian: `sudo apt install mysql-server`
-     - Windows: Tải installer từ trang web MySQL
-
-## 🚀 Hướng Dẫn Cài Đặt Nhanh
-
-### Bước 1: Cấu Hình MySQL
-
-1. Khởi động dịch vụ MySQL:
 ```bash
-# macOS
-brew services start mysql
+# Kiểm tra Python đã cài
+python3 --version
 
-# Ubuntu/Debian
-sudo systemctl start mysql
+# Cài đặt pip nếu chưa có
+sudo apt-get install python3-pip
 
-# Windows
-# Khởi động MySQL từ Services hoặc MySQL Workbench
-```
+# Di chuyển vào thư mục backend
+cd /app/backend
 
-2. Tạo database:
-```bash
-mysql -u root -p
-```
-
-```sql
-CREATE DATABASE temp_mail CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- Nếu dùng credentials khác, cập nhật file backend/.env
--- Credentials mặc định: root / 190705
-```
-
-### Bước 2: Cài Đặt Backend
-
-1. Chuyển đến thư mục backend:
-```bash
-cd backend
-```
-
-2. Tạo và kích hoạt virtual environment:
-```bash
-# macOS/Linux
-python3 -m venv venv
-source venv/bin/activate
-
-# Windows
-python -m venv venv
-venv\Scripts\activate
-```
-
-3. Cài đặt dependencies:
-```bash
+# Cài đặt dependencies
 pip install -r requirements.txt
 ```
 
-4. Kiểm tra biến môi trường trong file `.env`:
+### 1.2 Cài đặt Node.js (Frontend)
+
+```bash
+# Kiểm tra Node.js đã cài
+node --version
+npm --version
+
+# Cài yarn (khuyến nghị)
+npm install -g yarn
+
+# Di chuyển vào thư mục frontend
+cd /app/frontend
+
+# Cài đặt dependencies
+yarn install
+```
+
+---
+
+## 2. Cấu hình MySQL
+
+### 2.1 Cài đặt MySQL/MariaDB
+
+**Ubuntu/Debian:**
+
+```bash
+sudo apt-get update
+sudo apt-get install mariadb-server mariadb-client
+```
+
+**macOS:**
+
+```bash
+brew install mariadb
+brew services start mariadb
+```
+
+**Windows:**
+
+Tải và cài đặt MySQL Community Server từ: https://dev.mysql.com/downloads/mysql/
+
+### 2.2 Khởi động MySQL
+
+```bash
+# Linux
+sudo service mariadb start
+sudo service mariadb status
+
+# macOS
+brew services start mariadb
+
+# Windows
+# MySQL tự động chạy sau khi cài đặt
+```
+
+### 2.3 Tạo Database
+
+```bash
+# Kết nối MySQL (không cần password lần đầu)
+mysql -u root
+
+# Trong MySQL shell:
+CREATE DATABASE temp_mail CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+# Đặt password cho root
+ALTER USER 'root'@'localhost' IDENTIFIED BY '190705';
+FLUSH PRIVILEGES;
+
+# Thoát
+exit;
+```
+
+### 2.4 Kiểm tra kết nối
+
+```bash
+# Test kết nối với password
+mysql -u root -p190705 -e "SHOW DATABASES;"
+
+# Kết quả phải hiển thị database temp_mail
+```
+
+### 2.5 Kiểm tra file .env
+
+File `/app/backend/.env` phải có nội dung:
+
 ```env
-DB_HOST=localhost
+DB_HOST=127.0.0.1
 DB_PORT=3306
 DB_USER=root
 DB_PASSWORD=190705
@@ -109,328 +122,341 @@ DB_NAME=temp_mail
 CORS_ORIGINS=http://localhost:3000
 ```
 
-5. Khởi tạo database:
+---
+
+## 3. Chạy ứng dụng
+
+### 3.1 Chạy với Supervisor (Khuyến nghị)
+
+**Kiểm tra supervisor:**
+
 ```bash
-python init_db.py
+sudo supervisorctl status
 ```
 
-6. Chạy backend server:
+**Khởi động services:**
+
 ```bash
-python -m uvicorn server:app --host 0.0.0.0 --port 8001 --reload
+# Restart tất cả services
+sudo supervisorctl restart all
+
+# Hoặc restart từng service
+sudo supervisorctl restart backend
+sudo supervisorctl restart frontend
 ```
 
-Backend sẽ chạy tại: **http://localhost:8001**  
-API documentation: **http://localhost:8001/docs**
+**Xem logs:**
 
-### Bước 3: Cài Đặt Frontend
-
-1. Mở terminal mới và chuyển đến thư mục frontend:
 ```bash
-cd frontend
+# Backend logs
+tail -f /var/log/supervisor/backend.out.log
+tail -f /var/log/supervisor/backend.err.log
+
+# Frontend logs
+tail -f /var/log/supervisor/frontend.out.log
+tail -f /var/log/supervisor/frontend.err.log
 ```
 
-2. Cài đặt dependencies:
+### 3.2 Chạy thủ công (Development)
+
+**Terminal 1 - Backend:**
+
 ```bash
-yarn install
+cd /app/backend
+uvicorn server:app --host 0.0.0.0 --port 8001 --reload
 ```
 
-3. Kiểm tra biến môi trường trong file `.env`:
-```env
-REACT_APP_BACKEND_URL=http://localhost:8001
-PORT=3000
-```
+**Terminal 2 - Frontend:**
 
-4. Chạy frontend development server:
 ```bash
+cd /app/frontend
 yarn start
 ```
 
-Frontend sẽ chạy tại: **http://localhost:3000**
+### 3.3 Kiểm tra services đang chạy
 
-### Bước 4: Sử Dụng Ứng Dụng
-
-1. Mở trình duyệt và truy cập: **http://localhost:3000**
-2. Email tạm sẽ được tạo tự động
-3. Copy địa chỉ email và sử dụng để test/đăng ký
-4. Nhấn làm mới để kiểm tra tin nhắn mới
-5. Click vào tin nhắn để xem nội dung HTML/text
-
-## 📁 Cấu Trúc Project
-
-```
-/app/
-├── backend/
-│   ├── server.py              # Ứng dụng FastAPI chính
-│   ├── database.py            # Kết nối MySQL & session
-│   ├── models.py              # SQLAlchemy models (TempEmail, EmailHistory, SavedEmail)
-│   ├── background_tasks.py   # Background task tự động hết hạn
-│   ├── init_db.py            # Script khởi tạo database
-│   ├── requirements.txt      # Python dependencies
-│   └── .env                  # Cấu hình backend
-├── frontend/
-│   ├── src/
-│   │   ├── App.js           # Component React chính
-│   │   ├── App.css          # Styles
-│   │   └── index.js         # Entry point
-│   ├── public/              # Static assets
-│   ├── package.json         # Node dependencies
-│   └── .env                 # Cấu hình frontend
-├── README.md                # Tài liệu tiếng Anh
-└── HUONG_DAN.md            # Tài liệu này (tiếng Việt)
-```
-
-## 🗄️ Cấu Trúc Database
-
-### Bảng: `temp_emails`
-```sql
-CREATE TABLE temp_emails (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    address VARCHAR(255) UNIQUE NOT NULL,
-    password VARCHAR(255),
-    token TEXT,
-    account_id VARCHAR(255),
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    expires_at DATETIME NOT NULL,
-    message_count INT DEFAULT 0,
-    provider VARCHAR(50),
-    username VARCHAR(100),
-    domain VARCHAR(100)
-);
-```
-
-### Bảng: `email_history`
-```sql
-CREATE TABLE email_history (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    address VARCHAR(255) NOT NULL,
-    password VARCHAR(255),
-    token TEXT,
-    account_id VARCHAR(255),
-    created_at DATETIME,
-    expired_at DATETIME NOT NULL,
-    message_count INT DEFAULT 0,
-    provider VARCHAR(50),
-    username VARCHAR(100),
-    domain VARCHAR(100)
-);
-```
-
-### Bảng: `saved_emails`
-```sql
-CREATE TABLE saved_emails (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    email_id INT NOT NULL,
-    message_id VARCHAR(255) NOT NULL,
-    from_address VARCHAR(255),
-    from_name VARCHAR(255),
-    subject TEXT,
-    html_content LONGTEXT,
-    text_content LONGTEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    saved_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-```
-
-## 🔌 API Endpoints
-
-### Email Hiện Tại
-- `POST /api/emails/create` - Tạo email tạm mới
-- `GET /api/emails` - Danh sách email đang hoạt động
-- `GET /api/emails/{id}` - Chi tiết email
-- `GET /api/emails/{id}/messages` - Lấy tin nhắn cho email
-- `POST /api/emails/{id}/refresh` - Làm mới tin nhắn
-- `DELETE /api/emails/{id}` - Xóa email
-- `POST /api/emails/{id}/extend-time` - Gia hạn email thêm 10 phút
-
-### Lịch Sử
-- `GET /api/emails/history/list` - Danh sách email đã hết hạn
-- `GET /api/emails/history/{id}/messages` - Lấy tin nhắn từ lịch sử
-- `DELETE /api/emails/history/delete` - Xóa email lịch sử (chọn lọc hoặc tất cả)
-
-### Email Đã Lưu
-- `POST /api/emails/{id}/messages/{msg_id}/save` - Lưu một tin nhắn
-- `GET /api/emails/saved/list` - Danh sách email đã lưu
-- `GET /api/emails/saved/{id}` - Chi tiết email đã lưu
-- `DELETE /api/emails/saved/delete` - Xóa email đã lưu
-
-### Domains
-- `GET /api/domains?service={service}` - Lấy domains có sẵn cho dịch vụ
-
-## 🐛 Xử Lý Lỗi
-
-### Backend không khởi động
-
-**Lỗi: "Can't connect to MySQL server"**
 ```bash
-# Kiểm tra MySQL có đang chạy không
-mysql -u root -p
+# Kiểm tra backend
+curl http://localhost:8001/api/
 
-# Kiểm tra credentials trong backend/.env
-# Kiểm tra database có tồn tại không
-mysql -u root -p -e "SHOW DATABASES;"
+# Kiểm tra frontend (mở browser)
+open http://localhost:3000
 ```
-
-**Lỗi: "No module named 'httpx'"**
-```bash
-# Đảm bảo virtual environment đã được kích hoạt
-source venv/bin/activate  # macOS/Linux
-venv\Scripts\activate     # Windows
-
-# Cài lại dependencies
-pip install -r requirements.txt
-```
-
-### Frontend không khởi động
-
-**Lỗi: "Cannot find module"**
-```bash
-# Xóa node_modules và cài lại
-rm -rf node_modules yarn.lock
-yarn install
-```
-
-**Lỗi: "Port 3000 already in use"**
-```bash
-# Đổi port trong frontend/.env
-PORT=7050
-```
-
-### Vấn đề Database
-
-**Reset database:**
-```bash
-cd backend
-python init_db.py --reset
-# Gõ 'yes' để xác nhận
-```
-
-**Reset database thủ công:**
-```sql
-mysql -u root -p
-
-DROP DATABASE temp_mail;
-CREATE DATABASE temp_mail CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE temp_mail;
-```
-
-## 🔧 Mẹo Phát Triển
-
-### Hot Reload
-- Backend: Tự động reload khi bạn chỉnh sửa file Python (uvicorn --reload)
-- Frontend: Tự động reload khi bạn chỉnh sửa file React
-
-### Xem Logs
-```bash
-# Backend logs (nếu chạy foreground)
-# Logs hiện trong terminal
-
-# Kiểm tra background task logs
-# Logs hiện trong terminal backend với timestamp
-```
-
-### Test API
-- Dùng Swagger UI tích hợp sẵn: http://localhost:8001/docs
-- Hoặc dùng curl:
-```bash
-# Tạo email
-curl -X POST http://localhost:8001/api/emails/create
-
-# Lấy danh sách emails
-curl http://localhost:8001/api/emails
-```
-
-## 🎯 Giải Thích Các Tính Năng
-
-### Tự Động Tạo Email Lần Đầu
-Khi bạn mở ứng dụng lần đầu, nó sẽ tự động tạo một email tạm mà không cần bạn click nút nào.
-
-### Bộ Đếm Thời Gian 10 Phút
-Mỗi email có thời hạn 10 phút. Bộ đếm thời gian hiển thị ở trên cùng và đếm ngược theo thời gian thực.
-
-### Nút Gia Hạn Thời Gian
-Click "Làm mới 10 phút" để reset bộ đếm về 10 phút (không cộng dồn - luôn reset về 10 phút).
-
-### Tự Động Tạo Email Khi Hết Hạn
-Khi bộ đếm về 0, email cũ sẽ tự động chuyển vào lịch sử và một email mới được tạo.
-
-### Lịch Sử Email
-Xem tất cả email đã hết hạn trong tab "Lịch sử". Bạn vẫn có thể xem tin nhắn từ email đã hết hạn. Dùng checkbox để chọn và xóa lịch sử.
-
-### Lưu Email Quan Trọng
-Click nút "Lưu" khi xem tin nhắn để lưu nó vĩnh viễn. Email đã lưu hiện trong tab "Mail đã lưu".
-
-## 💡 Các Lưu Ý Quan Trọng
-
-### Credentials MySQL
-- Mặc định: `root / 190705`
-- Nếu bạn dùng credentials khác, cập nhật file `backend/.env`
-
-### Port Configuration
-- Backend: `8001` (có thể đổi trong uvicorn command)
-- Frontend: `3000` (có thể đổi trong `frontend/.env`)
-
-### Multiple Providers
-Ứng dụng hỗ trợ nhiều nhà cung cấp email:
-- **Mail.tm**: Provider chính, đáng tin cậy
-- **1secmail**: Backup provider, nhanh
-- **Mail.gw**: Alternative provider
-- **Guerrilla Mail**: Không cần đăng ký, dễ dùng
-
-Ứng dụng sẽ tự động chọn provider hoạt động tốt nhất.
-
-### Background Tasks
-Backend tự động chạy background task để:
-- Kiểm tra email hết hạn mỗi 30 giây
-- Tự động chuyển email hết hạn vào lịch sử
-- Tự động tạo email mới nếu không còn email active
-
-## 🔐 Bảo Mật
-
-- Email tạm không yêu cầu xác thực cá nhân
-- Không lưu trữ thông tin nhạy cảm
-- Tất cả email tự động hết hạn sau 10 phút
-- Lịch sử có thể xóa bất cứ lúc nào
-
-## 📞 Hỗ Trợ
-
-Nếu gặp vấn đề:
-1. Kiểm tra file README.md và HUONG_DAN.md này
-2. Xác minh đã cài đặt đầy đủ yêu cầu hệ thống
-3. Kiểm tra phần xử lý lỗi
-4. Xem backend logs để biết thông báo lỗi chi tiết
-
-## 📄 License
-
-Project này được cung cấp as-is cho mục đích cá nhân và giáo dục.
-
-## 🎨 Giao Diện
-
-Ứng dụng có giao diện hiện đại với:
-- **Dark theme** mặc định (có thể chuyển sang light theme)
-- **Responsive design** hoạt động trên mọi thiết bị
-- **Smooth animations** cho trải nghiệm người dùng tốt hơn
-- **Toast notifications** cho feedback tức thời
-- **Modern card design** với shadows và hover effects
-
-## 🚀 Tính Năng Nâng Cao
-
-### Chọn Dịch Vụ Email
-- Chọn "Tự động" để hệ thống tự chọn provider tốt nhất
-- Hoặc chọn provider cụ thể: Mail.tm, 1secmail, Mail.gw, Guerrilla Mail
-
-### Chọn Domain
-- Mỗi provider có nhiều domains khác nhau
-- Chọn domain yêu thích của bạn từ dropdown
-
-### Làm Mới Tin Nhắn
-- Auto-refresh: Tự động kiểm tra tin nhắn mới mỗi 10 giây
-- Manual refresh: Click nút "Làm mới" bất cứ lúc nào
-
-### Xem Chi Tiết Tin Nhắn
-- Xem nội dung HTML (rendered)
-- Xem nội dung text (plain text)
-- Thông tin người gửi, tiêu đề, thời gian
 
 ---
 
-**Được tạo với ❤️ bằng FastAPI + React + MySQL**
+## 4. Sử dụng ứng dụng
+
+### 4.1 Tạo Email mới
+
+1. Mở trình duyệt: http://localhost:3000
+2. Ứng dụng sẽ tự động tạo email ngẫu nhiên
+3. Hoặc click nút **"Tạo email mới"** để tạo email khác
+
+### 4.2 Chọn dịch vụ Email
+
+- **🎲 Random**: Tự động chọn dịch vụ ngẫu nhiên (Mail.tm, Mail.gw, 1secmail)
+- **Mail.tm**: Dịch vụ mail.tm
+- **Mail.gw**: Dịch vụ mail.gw  
+- **1secmail**: Dịch vụ 1secmail
+
+### 4.3 Quản lý Email
+
+**Làm mới thời gian:**
+- Click nút **"Làm mới 10 phút"** để reset timer về 10 phút
+
+**Xóa email:**
+- Click nút **"Xóa"** để xóa email hiện tại
+- Email sẽ KHÔNG được lưu vào lịch sử
+
+**Lưu email:**
+- Click nút **"Lưu"** để lưu email vào mục "Mail đã lưu"
+
+### 4.4 Nhận và đọc Email
+
+1. Email sẽ tự động làm mới mỗi 30 giây
+2. Click vào tin nhắn để đọc nội dung
+3. Có 2 chế độ xem: **HTML** và **Text**
+4. Click **"Lưu email này"** trong chi tiết email để lưu tin nhắn quan trọng
+
+### 4.5 Lịch sử
+
+- Tab **"Lịch sử"**: Xem email đã hết hạn
+- Chọn nhiều email và xóa hàng loạt
+- Click **"Xóa tất cả"** để xóa toàn bộ lịch sử
+
+### 4.6 Mail đã lưu
+
+- Tab **"Mail đã lưu"**: Xem email/tin nhắn đã lưu
+- Click vào email để xem lại nội dung
+- Quản lý và xóa email đã lưu
+
+---
+
+## 5. Xử lý lỗi thường gặp
+
+### 5.1 Lỗi: MySQL Connection Failed
+
+**Triệu chứng:**
+```
+ERROR: Can't connect to MySQL server on '127.0.0.1'
+```
+
+**Giải pháp:**
+
+```bash
+# 1. Kiểm tra MySQL đang chạy
+sudo service mariadb status
+
+# 2. Khởi động MySQL
+sudo service mariadb start
+
+# 3. Kiểm tra kết nối
+mysql -u root -p190705 -e "SELECT 1;"
+
+# 4. Kiểm tra database tồn tại
+mysql -u root -p190705 -e "SHOW DATABASES LIKE 'temp_mail';"
+
+# 5. Tạo lại database nếu cần
+mysql -u root -p190705 -e "CREATE DATABASE IF NOT EXISTS temp_mail;"
+```
+
+### 5.2 Lỗi: Backend không khởi động
+
+**Triệu chứng:**
+```
+ModuleNotFoundError: No module named 'fastapi'
+```
+
+**Giải pháp:**
+
+```bash
+cd /app/backend
+
+# Cài lại tất cả dependencies
+pip install -r requirements.txt --force-reinstall
+
+# Hoặc cài từng package bị thiếu
+pip install fastapi uvicorn sqlalchemy pymysql python-dotenv httpx
+```
+
+### 5.3 Lỗi: Frontend không khởi động
+
+**Triệu chứng:**
+```
+Error: Cannot find module 'react'
+```
+
+**Giải pháp:**
+
+```bash
+cd /app/frontend
+
+# Xóa node_modules và cài lại
+rm -rf node_modules yarn.lock
+yarn install
+
+# Hoặc dùng npm
+rm -rf node_modules package-lock.json
+npm install
+```
+
+### 5.4 Lỗi: CORS Error
+
+**Triệu chứng:**
+```
+Access to fetch at 'http://localhost:8001/api/' has been blocked by CORS policy
+```
+
+**Giải pháp:**
+
+Kiểm tra file `/app/backend/.env`:
+```env
+CORS_ORIGINS=http://localhost:3000
+```
+
+Restart backend:
+```bash
+sudo supervisorctl restart backend
+```
+
+### 5.5 Lỗi: Port đã được sử dụng
+
+**Triệu chứng:**
+```
+ERROR: Address already in use
+```
+
+**Giải pháp:**
+
+```bash
+# Tìm process đang dùng port 8001
+lsof -i :8001
+
+# Kill process
+kill -9 <PID>
+
+# Hoặc dùng fuser
+sudo fuser -k 8001/tcp
+
+# Tương tự cho port 3000
+sudo fuser -k 3000/tcp
+```
+
+### 5.6 Lỗi: Database tables không tồn tại
+
+**Triệu chứng:**
+```
+Table 'temp_mail.temp_emails' doesn't exist
+```
+
+**Giải pháp:**
+
+Tables sẽ được tạo tự động khi backend khởi động. Nếu không, restart backend:
+
+```bash
+sudo supervisorctl restart backend
+
+# Hoặc chạy script init database
+cd /app/backend
+python init_db.py
+```
+
+### 5.7 Lỗi: Email providers không khả dụng
+
+**Triệu chứng:**
+```
+Tất cả dịch vụ email đều không khả dụng
+```
+
+**Giải pháp:**
+
+1. Đợi 60 giây (provider cooldown)
+2. Thử lại với dịch vụ khác
+3. Kiểm tra kết nối internet
+4. Check logs: `tail -f /var/log/supervisor/backend.err.log`
+
+---
+
+## 6. Maintenance
+
+### 6.1 Backup Database
+
+```bash
+# Backup
+mysqldump -u root -p190705 temp_mail > backup_$(date +%Y%m%d).sql
+
+# Restore
+mysql -u root -p190705 temp_mail < backup_20240101.sql
+```
+
+### 6.2 Xóa dữ liệu cũ
+
+```bash
+mysql -u root -p190705 temp_mail -e "DELETE FROM email_history WHERE expired_at < DATE_SUB(NOW(), INTERVAL 7 DAY);"
+mysql -u root -p190705 temp_mail -e "DELETE FROM saved_emails WHERE saved_at < DATE_SUB(NOW(), INTERVAL 30 DAY);"
+```
+
+### 6.3 Update code
+
+```bash
+# Pull code mới
+git pull
+
+# Update backend dependencies
+cd /app/backend
+pip install -r requirements.txt --upgrade
+
+# Update frontend dependencies
+cd /app/frontend
+yarn upgrade
+
+# Restart services
+sudo supervisorctl restart all
+```
+
+---
+
+## 7. Tips & Tricks
+
+### 7.1 Chạy backend ở background
+
+```bash
+cd /app/backend
+nohup uvicorn server:app --host 0.0.0.0 --port 8001 > backend.log 2>&1 &
+```
+
+### 7.2 Tăng timeout cho email providers
+
+Sửa file `/app/backend/server.py`, tìm và thay đổi:
+```python
+RETRY_MAX_ATTEMPTS = 5  # Tăng từ 3 lên 5
+PROVIDER_COOLDOWN_SECONDS = 30  # Giảm từ 60 xuống 30
+```
+
+### 7.3 Enable debug mode
+
+File `/app/backend/database.py`, dòng 82:
+```python
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL,
+    pool_pre_ping=True,
+    pool_recycle=3600,
+    echo=True  # Thay False thành True để xem SQL queries
+)
+```
+
+---
+
+## 8. Liên hệ & Support
+
+Nếu gặp vấn đề không giải quyết được, vui lòng:
+
+1. Kiểm tra logs: `/var/log/supervisor/backend.err.log`
+2. Kiểm tra MySQL: `sudo service mariadb status`
+3. Restart services: `sudo supervisorctl restart all`
+4. Tạo issue trên GitHub
+
+---
+
+**Chúc bạn sử dụng TempMail thành công! 🎉**
