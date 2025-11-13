@@ -250,55 +250,39 @@ function App() {
         if (diffSeconds <= 0) {
           setTimeLeft(0);
           
-          // Email expired, auto-create new email (only once using ref)
+          // Email expired - move to history, NO auto-create
           if (!isCreatingEmailRef.current) {
             isCreatingEmailRef.current = true;
-            console.log('⏰ Timer expired, auto-creating new email...');
-            toast.info('⏰ Email đã hết hạn, đang tạo email mới tự động...');
+            console.log('⏰ Timer expired, moving email to history...');
+            toast.warning('⏰ Email đã hết hạn. Vui lòng tạo email mới thủ công.', {
+              duration: 5000
+            });
             
+            // Clear current email
+            setCurrentEmail(null);
+            setMessages([]);
+            setSelectedMessage(null);
+            
+            // Reload history to show the expired email
             try {
-              const response = await axios.post(`${API}/emails/create`, {
-                service: selectedService
-              });
-              const newEmail = response.data;
+              const historyResponse = await axios.get(`${API}/emails/history/list`);
               
-              setCurrentEmail(newEmail);
-              setMessages([]);
-              setSelectedMessage(null);
+              // Deduplicate by ID to prevent duplicate key errors
+              const uniqueHistory = [];
+              const seenIds = new Set();
               
-              toast.success('✅ Email mới đã được tạo tự động!', {
-                description: `${newEmail.address} (${newEmail.service_name || newEmail.provider})`,
-                duration: 5000
-              });
-              
-              // Reload history
-              try {
-                const historyResponse = await axios.get(`${API}/emails/history/list`);
-                
-                // Deduplicate by ID to prevent duplicate key errors
-                const uniqueHistory = [];
-                const seenIds = new Set();
-                
-                for (const email of historyResponse.data) {
-                  if (!seenIds.has(email.id)) {
-                    seenIds.add(email.id);
-                    uniqueHistory.push(email);
-                  } else {
-                    console.warn(`⚠️ Duplicate history email ID found and removed: ${email.id}`);
-                  }
+              for (const email of historyResponse.data) {
+                if (!seenIds.has(email.id)) {
+                  seenIds.add(email.id);
+                  uniqueHistory.push(email);
+                } else {
+                  console.warn(`⚠️ Duplicate history email ID found and removed: ${email.id}`);
                 }
-                
-                setHistoryEmails(uniqueHistory);
-              } catch (err) {
-                console.error('Error reloading history:', err);
               }
-            } catch (error) {
-              console.error('Auto-create email error:', error);
-              toast.error('Không thể tạo email mới tự động', {
-                description: error.response?.data?.detail || 'Lỗi không xác định'
-              });
-              // Reset flag to allow retry
-              isCreatingEmailRef.current = false;
+              
+              setHistoryEmails(uniqueHistory);
+            } catch (err) {
+              console.error('Error reloading history:', err);
             }
           }
         } else {
