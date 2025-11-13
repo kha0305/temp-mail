@@ -502,6 +502,9 @@ function App() {
     try {
       const response = await axios.post(`${API}/emails/${currentEmail.id}/extend-time`);
       
+      // CRITICAL FIX: Reset the creating email ref to prevent auto-recreation
+      isCreatingEmailRef.current = false;
+      
       // Update currentEmail with new expires_at
       setCurrentEmail(prev => ({
         ...prev,
