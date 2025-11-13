@@ -139,7 +139,7 @@ pip install -r requirements.txt
 2. ❌ Không có auto quay về 10 phút
 
 **Nguyên nhân:**
-- Frontend đang gọi tới URL backend **SAI**: `https://mail-renewal-1.preview.emergentagent.com`
+- Frontend đang gọi tới URL backend **SAI**: `https://stable-local-build.preview.emergentagent.com`
 - Gây lỗi CORS và không kết nối được backend
 - Backend URL đúng phải là: `http://localhost:8001`
 

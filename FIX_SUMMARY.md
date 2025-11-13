@@ -22,7 +22,7 @@ Ngày: 11/11/2024
 
 **Trước (SAI):**
 ```env
-REACT_APP_BACKEND_URL=https://mail-renewal-1.preview.emergentagent.com
+REACT_APP_BACKEND_URL=https://stable-local-build.preview.emergentagent.com
 ```
 
 **Sau (ĐÚNG):**
@@ -32,7 +32,7 @@ REACT_APP_BACKEND_URL=http://localhost:8001
 
 ### 2. Lỗi CORS
 ```
-Access to XMLHttpRequest at 'https://mail-renewal-1.preview.emergentagent.com/api/emails/create' 
+Access to XMLHttpRequest at 'https://stable-local-build.preview.emergentagent.com/api/emails/create' 
 from origin 'http://localhost:3000' has been blocked by CORS policy
 ```
 
