@@ -148,7 +148,7 @@ function App() {
     }
   };
 
-  // Load emails on mount and auto-create if no email exists
+  // Load emails on mount (NO auto-create)
   useEffect(() => {
     const initializeApp = async () => {
       try {
@@ -169,26 +169,10 @@ function App() {
             console.error('Error loading initial messages:', err);
           }
         } else {
-          // No emails exist, auto-create one with default service
-          toast.info('Đang tạo email mới...');
-          try {
-            const createResponse = await axios.post(`${API}/emails/create`, {
-              service: selectedService
-            });
-            const newEmail = createResponse.data;
-            
-            setCurrentEmail(newEmail);
-            setMessages([]);
-            setSelectedMessage(null);
-            
-            toast.success('Email mới đã được tạo!', {
-              description: `${newEmail.address} (${newEmail.service_name || newEmail.provider})`
-            });
-          } catch (createErr) {
-            toast.error('Không thể tạo email mới', {
-              description: createErr.response?.data?.detail || 'Lỗi không xác định'
-            });
-          }
+          // No emails exist - user must create manually
+          console.log('No existing emails found. User must create manually.');
+          setCurrentEmail(null);
+          setMessages([]);
         }
         
         // Load history
@@ -236,23 +220,9 @@ function App() {
         }
       } catch (error) {
         console.error('Error initializing app:', error);
-        // If error getting emails, try to create one anyway
-        try {
-          toast.info('Đang tạo email mới...');
-          const createResponse = await axios.post(`${API}/emails/create`, {
-            service: selectedService
-          });
-          const newEmail = createResponse.data;
-          
-          setCurrentEmail(newEmail);
-          setMessages([]);
-          
-          toast.success('Email mới đã được tạo!', {
-            description: `${newEmail.address} (${newEmail.service_name || newEmail.provider})`
-          });
-        } catch (createErr) {
-          toast.error('Không thể khởi tạo ứng dụng');
-        }
+        // Just show empty state, no auto-create
+        setCurrentEmail(null);
+        setMessages([]);
       }
     };
     
