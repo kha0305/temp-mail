@@ -17,31 +17,14 @@ import time
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# Detect environment: Check if MySQL is available
-USE_MONGODB = os.getenv("USE_MONGODB", "false").lower() == "true"
+# MySQL setup only
+from sqlalchemy.orm import Session
+from database import get_db, engine, SessionLocal
+from models import TempEmail, EmailHistory, SavedEmail, Base
 
-# Try to detect MySQL availability
-if not USE_MONGODB:
-    try:
-        import pymysql
-        conn = pymysql.connect(host='127.0.0.1', port=3306, user='root', password='190705', connect_timeout=2)
-        conn.close()
-        logging.info("✅ MySQL detected - using MySQL")
-    except:
-        logging.warning("⚠️ MySQL not available - switching to MongoDB")
-        USE_MONGODB = True
-
-if USE_MONGODB:
-    # MongoDB setup
-    from database_mongodb import emails_collection, history_collection, saved_collection
-    logging.info("🍃 Using MongoDB for container environment")
-else:
-    # MySQL setup
-    from sqlalchemy.orm import Session
-    from database import get_db, engine, SessionLocal
-    from models import TempEmail, EmailHistory, SavedEmail, Base
-    Base.metadata.create_all(bind=engine)
-    logging.info("🐬 Using MySQL for local environment")
+# Create tables if not exist
+Base.metadata.create_all(bind=engine)
+logging.info("🐬 Using MySQL database")
 
 # Create the main app
 app = FastAPI()
