@@ -92,6 +92,9 @@ const getMessages = async (username, domain) => {
       createdAt: msg.date || new Date().toISOString()
     }));
   } catch (error) {
+    if (error.response && error.response.status === 403) {
+      throw new Error('403 Forbidden');
+    }
     console.error(`Error getting 1secmail messages: ${error.message}`);
     return [];
   }

@@ -87,6 +87,7 @@ function App() {
   const [selectedDomain, setSelectedDomain] = useState('');
   const [loadingDomains, setLoadingDomains] = useState(false);
   const [showServiceForm, setShowServiceForm] = useState(false);
+  const [serviceStats, setServiceStats] = useState({});
   
   // Notifications
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
@@ -243,6 +244,24 @@ function App() {
       setLoadingDomains(false);
     }
   };
+
+  // Load service stats
+  const loadServiceStats = async () => {
+    try {
+      const response = await axios.get(`${API}/`);
+      if (response.data && response.data.stats) {
+        setServiceStats(response.data.stats);
+      }
+    } catch (error) {
+      console.error('Error loading service stats:', error);
+    }
+  };
+
+  useEffect(() => {
+    loadServiceStats();
+    const interval = setInterval(loadServiceStats, 30000); // Refresh stats every 30s
+    return () => clearInterval(interval);
+  }, []);
 
   // Load emails on mount and auto-create if no email exists
   useEffect(() => {
@@ -944,7 +963,7 @@ function App() {
             <TabsContent value="current" className="space-y-6 animate-in fade-in-50 duration-500">
               <div className="grid gap-6 lg:grid-cols-12">
                 {/* Left Column: Email Info */}
-                <div className="lg:col-span-4 space-y-6">
+                <div className="lg:col-span-5 space-y-6">
                   <Card className="border-primary/20 shadow-lg">
                     <CardContent className="p-6 space-y-6">
                       <div className="text-center space-y-2">
@@ -1089,16 +1108,50 @@ function App() {
                           Hoạt động
                         </span>
                       </div>
-                      <div className="flex justify-between">
-                        <span>Server:</span>
-                        <span className="font-medium uppercase">{currentEmail?.service_name || currentEmail?.provider || 'Auto'}</span>
+                      <div className="space-y-3 pt-2 border-t mt-2">
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs font-medium uppercase">Services Status:</span>
+                          <Button variant="ghost" size="icon" className="h-4 w-4" onClick={loadServiceStats} title="Refresh Status">
+                            <RefreshCw className="w-3 h-3" />
+                          </Button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          {[
+                            { id: 'mailtm', name: 'Mail.tm' },
+                            { id: 'mailgw', name: 'Mail.gw' },
+                            { id: '1secmail', name: '1secmail' },
+                            { id: 'guerrilla', name: 'Guerrilla' }
+                          ].map(server => {
+                            const isActive = currentEmail?.provider === server.id || currentEmail?.service_name === server.name;
+                            const stats = serviceStats[server.id] || {};
+                            const isOperational = stats.status === 'active';
+                            
+                            return (
+                              <div 
+                                key={server.id}
+                                className={`text-xs px-2 py-1.5 rounded border flex items-center justify-between ${
+                                  isActive
+                                  ? 'bg-primary/10 border-primary text-primary font-bold' 
+                                  : 'bg-muted/50 border-transparent text-muted-foreground'
+                                }`}
+                                title={stats.status || 'Unknown'}
+                              >
+                                <div className="flex items-center gap-1.5">
+                                  <span className={`w-1.5 h-1.5 rounded-full ${isOperational ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                                  {server.name}
+                                </div>
+                                {isActive && <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>}
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
                 </div>
 
                 {/* Right Column: Messages */}
-                <div className="lg:col-span-8">
+                <div className="lg:col-span-7">
                   <Card className="h-full min-h-[500px] flex flex-col shadow-md">
                     <div className="p-4 border-b flex items-center justify-between bg-muted/30">
                       <h3 className="font-semibold flex items-center gap-2">
@@ -1123,16 +1176,16 @@ function App() {
                     <div className="flex-1 flex overflow-hidden">
                       {/* Message List */}
                       <div className={`${selectedMessage ? 'hidden md:block w-1/3 border-r' : 'w-full'} flex flex-col bg-background`}>
-                        <ScrollArea className="flex-1">
-                          {messages.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center h-[400px] text-muted-foreground p-8 text-center">
-                              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-                                <Mail className="w-8 h-8 opacity-50" />
-                              </div>
-                              <p className="font-medium">Chưa có tin nhắn nào</p>
-                              <p className="text-sm mt-1">Email mới sẽ tự động xuất hiện ở đây</p>
+                        {messages.length === 0 ? (
+                          <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-8 text-center">
+                            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                              <Mail className="w-8 h-8 opacity-50" />
                             </div>
-                          ) : (
+                            <p className="font-medium">Chưa có tin nhắn nào</p>
+                            <p className="text-sm mt-1">Email mới sẽ tự động xuất hiện ở đây</p>
+                          </div>
+                        ) : (
+                          <ScrollArea className="flex-1">
                             <div className="divide-y">
                               {messages.map((msg) => (
                                 <div
@@ -1157,8 +1210,8 @@ function App() {
                                 </div>
                               ))}
                             </div>
-                          )}
-                        </ScrollArea>
+                          </ScrollArea>
+                        )}
                       </div>
 
                       {/* Message Detail */}
@@ -1231,11 +1284,11 @@ function App() {
                           </ScrollArea>
                         </div>
                       ) : (
-                        <div className="hidden md:flex w-2/3 items-center justify-center text-muted-foreground bg-muted/10">
-                          <div className="text-center">
-                            <Mail className="w-12 h-12 mx-auto mb-3 opacity-20" />
-                            <p>Chọn một tin nhắn để đọc</p>
+                        <div className="hidden md:flex w-2/3 flex-col items-center justify-center h-full text-muted-foreground bg-muted/10">
+                          <div className="w-16 h-16 bg-muted/50 rounded-full flex items-center justify-center mb-4">
+                            <Mail className="w-8 h-8 opacity-50" />
                           </div>
+                          <p className="font-medium">Chọn một tin nhắn để đọc</p>
                         </div>
                       )}
                     </div>

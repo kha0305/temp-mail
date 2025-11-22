@@ -54,13 +54,9 @@ const createEmailWithFailover = async (username, preferredService = 'auto', pref
   else if (preferredService === 'mailgw') providersToTry = ['mailgw'];
   else if (preferredService === 'guerrilla') providersToTry = ['guerrilla'];
   else {
-    providersToTry = ['mailtm', 'mailgw', '1secmail'];
-    // Shuffle
-    for (let i = providersToTry.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [providersToTry[i], providersToTry[j]] = [providersToTry[j], providersToTry[i]];
-    }
-    console.log(`🎲 Random provider order: ${providersToTry}`);
+    // Prioritize Mail.tm and Guerrilla as 1secmail/Mail.gw are currently unstable
+    providersToTry = ['mailtm', 'guerrilla'];
+    console.log(`👉 Auto-selecting stable providers: ${providersToTry.join(', ')}`);
   }
 
   const errors = [];
@@ -184,8 +180,24 @@ const createEmailWithFailover = async (username, preferredService = 'auto', pref
   throw new Error(errorMessage);
 };
 
+const getMessages = async (provider, accountId, token) => {
+  if (provider === 'mailtm') {
+    return await mailtm.getMessages(token);
+  } else if (provider === 'mailgw') {
+    return await mailgw.getMessages(token);
+  } else if (provider === '1secmail') {
+    // 1secmail uses accountId as "user@domain"
+    const [user, domain] = accountId.split('@');
+    return await onesecmail.getMessages(user, domain);
+  } else if (provider === 'guerrilla') {
+    return await guerrilla.getMessages(token);
+  }
+  throw new Error(`Unknown provider: ${provider}`);
+};
+
 module.exports = {
   createEmailWithFailover,
+  getMessages,
   mailtm,
   onesecmail,
   mailgw,

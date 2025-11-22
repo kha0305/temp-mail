@@ -70,6 +70,10 @@ const getMessages = async (token) => {
     });
     return response.data['hydra:member'] || [];
   } catch (error) {
+    if (error.response && error.response.status === 401) {
+      // Don't log 401s to console to avoid spam, just throw
+      throw new Error('401 Unauthorized');
+    }
     console.error(`Error getting Mail.tm messages: ${error.message}`);
     return [];
   }

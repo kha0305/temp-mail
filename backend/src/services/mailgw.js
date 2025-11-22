@@ -82,6 +82,9 @@ const getMessages = async (token) => {
     });
     return response.data['hydra:member'] || [];
   } catch (error) {
+    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+      throw new Error(`${error.response.status} Unauthorized`);
+    }
     console.error(`Error getting mail.gw messages: ${error.message}`);
     return [];
   }

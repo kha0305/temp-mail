@@ -77,11 +77,17 @@ io.on('connection', (socket) => {
       try {
         const messages = await emailService.getMessages(service, account_id || email, token);
         // We emit every time, frontend can check if there are new ones
-        // Or we could store last hash and only emit on change. 
-        // For simplicity, emit and let frontend handle diff or just replace.
         socket.emit('messages_update', messages);
       } catch (error) {
-        console.error(`Error polling messages for ${email}:`, error.message);
+        if (error.message.includes('401') || error.message.includes('403') || error.message.includes('Unauthorized') || error.message.includes('Forbidden')) {
+          console.warn(`🛑 Stopping polling for ${email} due to auth error: ${error.message}`);
+          clearInterval(intervalId);
+          socketIntervals.delete(socket.id);
+          socket.emit('error', { message: 'Session expired or invalid' });
+        } else {
+          // Only log other errors occasionally or if not auth related
+          console.error(`Error polling messages for ${email}:`, error.message);
+        }
       }
     }, 5000); // Check every 5 seconds
 

@@ -16,7 +16,7 @@
   --color-gray-800: #1f2937;
   --color-gray-900: #111827;
   --color-black: #000000;
-  
+
   /* Accent Color - Light Blue */
   --color-accent-50: #f0f9ff;
   --color-accent-100: #e0f2fe;
@@ -26,23 +26,23 @@
   --color-accent-500: #0ea5e9;
   --color-accent-600: #0284c7;
   --color-accent-700: #0369a1;
-  
+
   /* Semantic Colors */
   --color-bg-primary: var(--color-white);
   --color-bg-secondary: var(--color-gray-50);
   --color-bg-tertiary: var(--color-gray-100);
-  
+
   --color-text-primary: var(--color-gray-900);
   --color-text-secondary: var(--color-gray-600);
   --color-text-tertiary: var(--color-gray-500);
-  
+
   --color-border-light: var(--color-gray-200);
   --color-border-medium: var(--color-gray-300);
-  
+
   --color-accent: var(--color-accent-500);
   --color-accent-hover: var(--color-accent-600);
   --color-accent-light: var(--color-accent-100);
-  
+
   /* Spacing */
   --spacing-xs: 0.3rem;
   --spacing-sm: 0.6rem;
@@ -50,12 +50,12 @@
   --spacing-lg: 1.25rem;
   --spacing-xl: 1.75rem;
   --spacing-2xl: 2.5rem;
-  
+
   /* Border Radius */
   --radius-sm: 0.375rem;
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
-  
+
   /* Shadows */
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
@@ -64,17 +64,17 @@
 
 .dark {
   /* Improved dark mode with better contrast and readability */
-  --color-bg-primary: #1e293b;  /* Lighter than gray-900, easier on eyes */
-  --color-bg-secondary: #0f172a;  /* Darker base for contrast */
-  --color-bg-tertiary: #334155;  /* Medium tone for cards */
-  
-  --color-text-primary: #f1f5f9;  /* Brighter white for better readability */
-  --color-text-secondary: #cbd5e1;  /* Lighter gray for secondary text */
-  --color-text-tertiary: #94a3b8;  /* Medium gray, still readable */
-  
-  --color-border-light: #334155;  /* Visible but subtle borders */
-  --color-border-medium: #475569;  /* More prominent borders */
-  
+  --color-bg-primary: #1e293b; /* Lighter than gray-900, easier on eyes */
+  --color-bg-secondary: #0f172a; /* Darker base for contrast */
+  --color-bg-tertiary: #334155; /* Medium tone for cards */
+
+  --color-text-primary: #f1f5f9; /* Brighter white for better readability */
+  --color-text-secondary: #cbd5e1; /* Lighter gray for secondary text */
+  --color-text-tertiary: #94a3b8; /* Medium gray, still readable */
+
+  --color-border-light: #334155; /* Visible but subtle borders */
+  --color-border-medium: #475569; /* More prominent borders */
+
   /* Enhanced shadows for depth */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 3px 8px rgba(0, 0, 0, 0.08);
@@ -92,7 +92,7 @@
 }
 
 body {
-  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  font-family: "Inter", "Segoe UI", system-ui, sans-serif;
   font-size: 0.95rem;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -181,14 +181,14 @@ body {
 
 .tabs-list-new {
   display: flex;
-  gap: var(--spacing-md);              
-  background: transparent;             
-  border: none;                        
-  padding: 0;                          
+  gap: var(--spacing-md);
+  background: transparent;
+  border: none;
+  padding: 0;
 }
 
 .tab-trigger-new {
-  flex: none;                          
+  flex: none;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -281,7 +281,7 @@ body {
   align-items: center;
   justify-content: center;
   text-align: center;
-  max-width: 500px;    /* rộng hơn một chút (từ 500 → 540px) */
+  max-width: 500px; /* rộng hơn một chút (từ 500 → 540px) */
   width: 100%;
   margin-left: auto;
   margin-right: auto;
@@ -290,8 +290,8 @@ body {
 .email-address-container {
   display: flex;
   align-items: center;
-  justify-content: center;  /* canh giữa theo chiều ngang */
-  gap: 0.4rem;              /* giảm khoảng cách giữa email - timer - copy */
+  justify-content: center; /* canh giữa theo chiều ngang */
+  gap: 0.4rem; /* giảm khoảng cách giữa email - timer - copy */
   flex-wrap: nowrap;
   width: 100%;
 }
@@ -300,7 +300,7 @@ body {
   font-size: 1.1rem;
   font-weight: 600;
   color: var(--color-text-primary);
-  font-family: 'Courier New', monospace;
+  font-family: "Courier New", monospace;
   letter-spacing: 0.5px;
 }
 
@@ -435,7 +435,11 @@ body {
    =================================== */
 
 .service-selection-form {
-  background: linear-gradient(135deg, var(--color-bg-secondary) 0%, var(--color-bg-tertiary) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--color-bg-secondary) 0%,
+    var(--color-bg-tertiary) 100%
+  );
   border: 2px solid var(--color-accent);
   border-radius: var(--radius-md);
   padding: var(--spacing-md);
@@ -799,6 +803,20 @@ body {
   overflow-x: auto;
 }
 
+/* Style links in email content */
+.html-content a,
+.text-content a,
+.prose a {
+  color: #3b82f6 !important; /* Blue-500 */
+  text-decoration: underline !important;
+}
+
+.html-content a:hover,
+.text-content a:hover,
+.prose a:hover {
+  color: #2563eb !important; /* Blue-600 */
+}
+
 .html-content * {
   max-width: 100%;
 }
@@ -918,7 +936,7 @@ body {
   background-color: var(--color-bg-tertiary);
   padding: 0.25rem 0.5rem;
   border-radius: var(--radius-sm);
-  font-family: 'Courier New', monospace;
+  font-family: "Courier New", monospace;
   font-size: 0.9em;
 }
 
@@ -937,7 +955,7 @@ body {
 
 .text-content {
   white-space: pre-wrap;
-  font-family: 'Courier New', monospace;
+  font-family: "Courier New", monospace;
   font-size: 0.9rem;
 }
 
@@ -1102,7 +1120,7 @@ body {
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--color-text-primary);
-  font-family: 'Courier New', monospace;
+  font-family: "Courier New", monospace;
 }
 
 .history-time {
@@ -1124,7 +1142,7 @@ body {
   border: 1.8px solid var(--color-border-light);
   border-radius: var(--radius-lg);
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
-  width: 420px;      /* tăng từ 340 → 420px để không bị xuống dòng */
+  width: 420px; /* tăng từ 340 → 420px để không bị xuống dòng */
   height: 360px;
   margin: 0 auto;
   padding: 3rem 2rem;
@@ -1135,7 +1153,7 @@ body {
   font-weight: 700;
   color: var(--color-text-primary);
   margin-bottom: 0.75rem;
-  white-space: nowrap;  /* 👈 ngăn chữ bị xuống dòng */
+  white-space: nowrap; /* 👈 ngăn chữ bị xuống dòng */
 }
 
 .empty-icon-large {
@@ -1225,54 +1243,54 @@ body {
   .main-content-new {
     padding: var(--spacing-md);
   }
-  
+
   .tab-content-new {
     padding: 0 var(--spacing-sm);
   }
-  
+
   .hero-section {
     padding: var(--spacing-xl);
   }
-  
+
   .hero-title {
     font-size: 1.5rem;
   }
-  
+
   .email-address-container {
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .email-address {
     font-size: 1rem;
   }
-  
+
   .action-buttons-group {
     flex-direction: column;
     width: 100%;
   }
-  
+
   .action-btn {
     width: 100%;
     justify-content: center;
   }
-  
+
   .form-row {
     flex-direction: column;
   }
-  
+
   .history-actions {
     width: 100%;
     flex-direction: column;
   }
-  
+
   .select-all-btn,
   .delete-selected-btn,
   .delete-all-btn {
     width: 100%;
     justify-content: center;
   }
-  
+
   .message-detail,
   .detail-card,
   .hero-section,
@@ -1282,7 +1300,7 @@ body {
     padding-left: var(--spacing-md);
     padding-right: var(--spacing-md);
   }
-  
+
   .detail-content {
     padding: var(--spacing-md);
   }
