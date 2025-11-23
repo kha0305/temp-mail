@@ -27,7 +27,7 @@ router.get('/', (req, res) => {
 
   res.json({
     message: 'TempMail API - Node.js with Multiple Providers',
-    providers: ['Mail.tm', 'Mail.gw', '1secmail', 'Guerrilla Mail'],
+    providers: ['Edu Mail', 'Custom Service 1', 'Custom Service 2', '1secmail', 'Guerrilla Mail'],
     stats: stats,
     config: {
       provider_cooldown: '60s',
