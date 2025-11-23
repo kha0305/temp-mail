@@ -62,6 +62,16 @@ app.get('/', async (req, res) => {
   });
 });
 
+// Temporary Route to Sync Database (Run once)
+app.get('/sync-db', async (req, res) => {
+  try {
+    await sequelize.sync({ alter: true });
+    res.json({ status: 'success', message: 'Database synced successfully' });
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: error.message });
+  }
+});
+
 // Routes
 app.use('/api', apiRoutes);
 
