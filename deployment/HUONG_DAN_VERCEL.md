@@ -66,4 +66,57 @@ Truy cập vào link Frontend. Nếu thấy web hiện lên và không báo lỗ
 
 ---
 
-**Lưu ý:** Code backend đã được cập nhật để hỗ trợ SSL cho Aiven. Bạn không cần sửa gì thêm.
+---
+
+## Phần 5: Cấu hình Domain riêng (server.id.vn)
+
+Bạn có domain `server.id.vn`. Để chuyên nghiệp, chúng ta sẽ chia như sau:
+
+- **Frontend** (Giao diện web): Chạy tại `https://server.id.vn`
+- **Backend** (API xử lý): Chạy tại `https://api.server.id.vn`
+
+### Bước 1: Cấu hình trên Vercel
+
+1.  **Cấu hình Frontend**:
+
+    - Vào Project **Frontend** trên Vercel -> **Settings** -> **Domains**.
+    - Nhập `server.id.vn` và bấm **Add**.
+    - Vercel sẽ hiện ra các thông số DNS (A Record và CNAME). Hãy giữ nguyên màn hình đó.
+
+2.  **Cấu hình Backend**:
+    - Vào Project **Backend** trên Vercel -> **Settings** -> **Domains**.
+    - Nhập `api.server.id.vn` và bấm **Add**.
+    - Vercel cũng sẽ hiện ra thông số CNAME.
+
+### Bước 2: Cấu hình DNS (Tại nơi bạn mua domain)
+
+Đăng nhập vào trang quản lý tên miền của bạn (ví dụ: iNET, Tenten, Mắt Bão...) và tạo 2 bản ghi sau:
+
+| Tên Record (Host) | Loại (Type) | Giá trị (Value/Target) | Ghi chú                               |
+| :---------------- | :---------- | :--------------------- | :------------------------------------ |
+| `@`               | **A**       | `76.76.21.21`          | Trỏ domain chính về Vercel (Frontend) |
+| `www`             | **CNAME**   | `cname.vercel-dns.com` | Hỗ trợ www.server.id.vn               |
+| `api`             | **CNAME**   | `cname.vercel-dns.com` | Trỏ subdomain api về Vercel (Backend) |
+
+_Lưu ý: Nếu Vercel yêu cầu xác thực TXT, hãy thêm cả bản ghi TXT mà Vercel cung cấp._
+
+### Bước 3: Cập nhật lại Biến môi trường (Quan trọng)
+
+Sau khi domain đã hoạt động (thường mất 5-30 phút để cập nhật DNS), bạn cần sửa lại cấu hình để 2 bên nhận ra nhau:
+
+1.  **Sửa Backend**:
+
+    - Vào Project **Backend** -> **Settings** -> **Environment Variables**.
+    - Sửa `CORS_ORIGINS` thành: `https://server.id.vn,https://www.server.id.vn`
+    - (Để cho phép Frontend mới gọi vào API).
+    - Vào tab **Deployments**, bấm vào nút 3 chấm ở lần deploy mới nhất -> **Redeploy** để áp dụng thay đổi.
+
+2.  **Sửa Frontend**:
+    - Vào Project **Frontend** -> **Settings** -> **Environment Variables**.
+    - Sửa `REACT_APP_BACKEND_URL` thành: `https://api.server.id.vn`
+    - (Để Frontend gọi đúng vào Backend mới).
+    - Vào tab **Deployments** -> **Redeploy**.
+
+### Bước 4: Hoàn tất
+
+Truy cập `https://server.id.vn` và tận hưởng thành quả!

@@ -16,13 +16,18 @@ const PORT = process.env.PORT || 8001;
 // Middleware
 app.use(express.json());
 
-// CORS
+// CORS Configuration
 const corsOrigins = process.env.CORS_ORIGINS || '*';
-const allowedOrigins = corsOrigins === '*' ? '*' : corsOrigins.split(',');
+const allowedOrigins = corsOrigins === '*' 
+  ? '*' 
+  : corsOrigins.split(',').map(origin => origin.trim());
+
+console.log('Allowed Origins:', allowedOrigins);
 
 app.use(cors({
   origin: allowedOrigins,
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
 
 // Rate Limiting
@@ -37,6 +42,15 @@ const apiLimiter = rateLimit({
 // Apply rate limiting to API routes
 app.use('/api', apiLimiter);
 
+// Health Check Route
+app.get('/', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    message: 'Temp Mail Backend is running',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Routes
 app.use('/api', apiRoutes);
 
@@ -45,8 +59,11 @@ const io = new Server(server, {
   cors: {
     origin: allowedOrigins,
     methods: ["GET", "POST"],
-    credentials: true
-  }
+    credentials: true,
+    allowedHeaders: ["my-custom-header"],
+  },
+  transports: ['polling', 'websocket'], // Force polling first for Vercel compatibility
+  allowEIO3: true
 });
 
 // Store active intervals for sockets
@@ -155,18 +172,26 @@ const startServer = async () => {
     await sequelize.sync();
     console.log('✅ Database synced');
 
-    // Start background task
-    setInterval(cleanupExpiredEmails, CHECK_INTERVAL);
-    console.log(`🚀 Background task started - checking every ${CHECK_INTERVAL / 1000}s`);
+    // Start background task (Only if not in Vercel environment to avoid freezing)
+    if (!process.env.VERCEL) {
+        setInterval(cleanupExpiredEmails, CHECK_INTERVAL);
+        console.log(`🚀 Background task started - checking every ${CHECK_INTERVAL / 1000}s`);
+        
+        server.listen(PORT, () => {
+            console.log(`Server is running on port ${PORT}`);
+            console.log(`API Docs: http://localhost:${PORT}/api`);
+            console.log(`Socket.io enabled`);
+        });
+    } else {
+        console.log('ℹ️ Running in Vercel environment - Background tasks disabled');
+    }
 
-    server.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
-      console.log(`API Docs: http://localhost:${PORT}/api`);
-      console.log(`Socket.io enabled`);
-    });
   } catch (error) {
     console.error('Unable to connect to the database:', error);
   }
 };
 
 startServer();
+
+// Export for Vercel
+module.exports = app;
