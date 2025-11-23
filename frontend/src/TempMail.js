@@ -271,8 +271,8 @@ const TempMail = () => {
                   {/* Email Display Box - Compact */}
                   <div className="mb-6">
                     <div className="flex items-center justify-between bg-gray-50 p-4 rounded-lg border border-gray-200">
-                      <div className="flex-1">
-                        <div className="text-lg font-mono text-gray-900 break-all">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-lg font-mono text-gray-900 truncate" title={currentEmail.email}>
                           {currentEmail.email}
                         </div>
                       </div>
