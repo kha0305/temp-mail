@@ -81,7 +81,7 @@ const TempMail = () => {
     const history = JSON.parse(localStorage.getItem('emailHistory') || '[]');
     const newHistory = [
       { ...email, createdAt: new Date().toISOString() },
-      ...history.slice(0, 15), // Keep only last 16
+      ...history.slice(0, 4), // Keep only last 5
     ];
     localStorage.setItem('emailHistory', JSON.stringify(newHistory));
     setEmailHistory(newHistory);

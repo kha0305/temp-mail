@@ -12,12 +12,12 @@ const sequelize = new Sequelize(
     dialect: "mysql",
     dialectModule: mysql2, // Explicitly provide the dialect module for Vercel
     logging: false,
-    dialectOptions: {
+    dialectOptions: process.env.DB_SSL === 'true' ? {
       ssl: {
         require: true,
         rejectUnauthorized: false,
       },
-    },
+    } : {},
     pool: {
       max: 5,
       min: 0,

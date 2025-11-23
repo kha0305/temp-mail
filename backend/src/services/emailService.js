@@ -1,8 +1,9 @@
 const { TempEmail, EmailHistory, SavedEmail } = require('../models');
-const mailtm = require('./mailtm');
 const onesecmail = require('./onesecmail');
-const mailgw = require('./mailgw');
 const guerrilla = require('./guerrilla');
+const eduService = require('./eduService');
+const customService1 = require('./customService1');
+const customService2 = require('./customService2');
 const { providerStats } = require('../utils/cache');
 
 const PROVIDER_COOLDOWN_SECONDS = 60;
@@ -49,13 +50,14 @@ const createEmailWithFailover = async (username, preferredService = 'auto', pref
   }
 
   let providersToTry = [];
-  if (preferredService === 'mailtm') providersToTry = ['mailtm'];
+  if (preferredService === 'edu') providersToTry = ['edu'];
+  else if (preferredService === 'custom1') providersToTry = ['custom1'];
+  else if (preferredService === 'custom2') providersToTry = ['custom2'];
   else if (preferredService === '1secmail') providersToTry = ['1secmail'];
-  else if (preferredService === 'mailgw') providersToTry = ['mailgw'];
   else if (preferredService === 'guerrilla') providersToTry = ['guerrilla'];
   else {
-    // Prioritize Mail.tm and Guerrilla as 1secmail/Mail.gw are currently unstable
-    providersToTry = ['mailtm', 'guerrilla'];
+    // Prioritize Custom services and Edu
+    providersToTry = ['custom1', 'custom2', 'edu', 'guerrilla'];
     console.log(`👉 Auto-selecting stable providers: ${providersToTry.join(', ')}`);
   }
 
@@ -72,47 +74,63 @@ const createEmailWithFailover = async (username, preferredService = 'auto', pref
     try {
       console.log(`🔄 Trying ${provider}...`);
 
-      if (provider === 'mailtm') {
-        const domains = await mailtm.getDomains();
+      if (provider === 'edu') {
+        const domains = await eduService.getDomains();
         if (!domains.length) continue;
         const domain = (preferredDomain && domains.includes(preferredDomain)) ? preferredDomain : domains[0];
-        const address = `${username}@${domain}`;
-        const accountData = await mailtm.createAccount(address, password);
-        const token = await mailtm.getToken(address, password);
+        const accountData = await eduService.createAccount(username, domain);
 
         clearProviderCooldown(provider);
         providerStats[provider].success = (providerStats[provider].success || 0) + 1;
-        console.log(`✅ Mail.tm email created: ${address}`);
+        console.log(`✅ Edu email created: ${accountData.address}`);
 
         return {
-          address,
-          password,
-          token,
+          address: accountData.address,
+          password: accountData.password,
+          token: accountData.token,
           account_id: accountData.id,
-          provider: 'mailtm',
-          service_name: 'Mail.tm',
+          provider: 'edu',
+          service_name: 'Edu Mail',
           username,
           domain
         };
-      } else if (provider === 'mailgw') {
-        const domains = await mailgw.getDomains();
+      } else if (provider === 'custom1') {
+        const domains = await customService1.getDomains();
         if (!domains.length) continue;
         const domain = (preferredDomain && domains.includes(preferredDomain)) ? preferredDomain : domains[0];
-        const address = `${username}@${domain}`;
-        const accountData = await mailgw.createAccount(address, password);
-        const token = await mailgw.getToken(address, password);
+        const accountData = await customService1.createAccount(username, domain);
 
         clearProviderCooldown(provider);
         providerStats[provider].success = (providerStats[provider].success || 0) + 1;
-        console.log(`✅ Mail.gw email created: ${address}`);
+        console.log(`✅ Custom1 email created: ${accountData.address}`);
 
         return {
-          address,
-          password,
-          token,
+          address: accountData.address,
+          password: accountData.password,
+          token: accountData.token,
           account_id: accountData.id,
-          provider: 'mailgw',
-          service_name: 'Mail.gw',
+          provider: 'custom1',
+          service_name: 'Custom Service 1',
+          username,
+          domain
+        };
+      } else if (provider === 'custom2') {
+        const domains = await customService2.getDomains();
+        if (!domains.length) continue;
+        const domain = (preferredDomain && domains.includes(preferredDomain)) ? preferredDomain : domains[0];
+        const accountData = await customService2.createAccount(username, domain);
+
+        clearProviderCooldown(provider);
+        providerStats[provider].success = (providerStats[provider].success || 0) + 1;
+        console.log(`✅ Custom2 email created: ${accountData.address}`);
+
+        return {
+          address: accountData.address,
+          password: accountData.password,
+          token: accountData.token,
+          account_id: accountData.id,
+          provider: 'custom2',
+          service_name: 'Custom Service 2',
           username,
           domain
         };
@@ -181,10 +199,12 @@ const createEmailWithFailover = async (username, preferredService = 'auto', pref
 };
 
 const getMessages = async (provider, accountId, token) => {
-  if (provider === 'mailtm') {
-    return await mailtm.getMessages(token);
-  } else if (provider === 'mailgw') {
-    return await mailgw.getMessages(token);
+  if (provider === 'edu') {
+    return await eduService.getMessages(token);
+  } else if (provider === 'custom1') {
+    return await customService1.getMessages(token);
+  } else if (provider === 'custom2') {
+    return await customService2.getMessages(token);
   } else if (provider === '1secmail') {
     // 1secmail uses accountId as "user@domain"
     const [user, domain] = accountId.split('@');
@@ -198,8 +218,9 @@ const getMessages = async (provider, accountId, token) => {
 module.exports = {
   createEmailWithFailover,
   getMessages,
-  mailtm,
   onesecmail,
-  mailgw,
-  guerrilla
+  guerrilla,
+  eduService,
+  customService1,
+  customService2
 };

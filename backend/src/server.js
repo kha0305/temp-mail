@@ -174,6 +174,23 @@ const cleanupExpiredEmails = async () => {
             message_count: email.message_count
           });
 
+          // Keep only last 5 history items
+          const allHistory = await EmailHistory.findAll({
+            order: [['expired_at', 'DESC']],
+            attributes: ['id']
+          });
+
+          if (allHistory.length > 5) {
+            const idsToDelete = allHistory.slice(5).map(h => h.id);
+            await EmailHistory.destroy({
+              where: {
+                id: {
+                  [Op.in]: idsToDelete
+                }
+              }
+            });
+          }
+
           await email.destroy();
           console.log(`Moved email to history: ${email.address}`);
         } catch (error) {
