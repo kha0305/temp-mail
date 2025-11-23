@@ -1,7 +1,12 @@
 const { v4: uuidv4 } = require('uuid');
 
 const getDomains = async () => {
-  return ['student.university.edu', 'faculty.college.edu'];
+  return [
+    'student.edu.pl', 
+    'faculty.edu.pl',
+    'student.edu.uka', 
+    'research.edu.uka'
+  ];
 };
 
 const createAccount = async (username, domain) => {
