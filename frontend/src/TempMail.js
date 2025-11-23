@@ -19,7 +19,7 @@ const TempMail = () => {
   
   const [activeTab, setActiveTab] = useState('current');
   const [domains, setDomains] = useState([]);
-  const [selectedService, setSelectedService] = useState('mail.tm');
+  const [selectedService, setSelectedService] = useState('edu');
   const [currentEmail, setCurrentEmail] = useState(null);
   const [messages, setMessages] = useState([]);
   const [emailHistory, setEmailHistory] = useState([]);
@@ -100,18 +100,30 @@ const TempMail = () => {
     try {
       setLoading(true);
       
-      // Get domains for selected service
-      const serviceDomains = domains.filter(d => d.service === selectedService);
-      if (serviceDomains.length === 0) {
-        alert('Không tìm thấy domain cho service này');
-        return;
+      // Prioritize Edu Mail if available
+      let targetService = selectedService;
+      if (domains.some(d => d.service === 'edu')) {
+        targetService = 'edu';
+      } else if (domains.some(d => d.service === 'custom1')) {
+        targetService = 'custom1';
       }
 
-      // Use first available domain
-      const domain = serviceDomains[0].domain;
+      // Get domains for selected service
+      const serviceDomains = domains.filter(d => d.service === targetService);
+      if (serviceDomains.length === 0) {
+        // Fallback to any available domain
+        if (domains.length > 0) {
+           targetService = domains[0].service;
+        } else {
+           alert('Không tìm thấy domain nào khả dụng');
+           return;
+        }
+      }
       
+      const domain = domains.find(d => d.service === targetService)?.domain;
+
       const response = await axios.post(`${API}/create-email`, {
-        service: selectedService,
+        service: targetService,
         domain: domain
       });
       
