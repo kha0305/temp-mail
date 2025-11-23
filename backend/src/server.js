@@ -175,38 +175,36 @@ const cleanupExpiredEmails = async () => {
   }
 };
 
-// Start Server
-const startServer = async () => {
-  try {
-    // Connect to Database
-    // On Vercel, we just authenticate. We DO NOT sync (create tables) as it's too heavy.
-    await sequelize.authenticate();
-    console.log('✅ Database connection has been established successfully.');
-
-    if (!IS_VERCEL) {
-      // Only sync locally or on VPS
+// Start Server Logic
+if (!IS_VERCEL) {
+  // Local/VPS environment: Connect DB, Sync, Start Background Task, Listen
+  const startLocalServer = async () => {
+    try {
+      await sequelize.authenticate();
+      console.log('✅ Database connection has been established successfully.');
+      
       await sequelize.sync();
       console.log('✅ Database synced');
 
-      // Start background task
       setInterval(cleanupExpiredEmails, CHECK_INTERVAL);
       console.log(`🚀 Background task started - checking every ${CHECK_INTERVAL / 1000}s`);
-      
+
       server.listen(PORT, () => {
         console.log(`Server is running on port ${PORT}`);
         console.log(`API Docs: http://localhost:${PORT}/api`);
         console.log(`Socket.io enabled`);
       });
-    } else {
-      console.log('ℹ️ Running in Vercel environment - Socket.io & Background tasks disabled');
+    } catch (error) {
+      console.error('Unable to connect to the database:', error);
     }
-
-  } catch (error) {
-    console.error('Unable to connect to the database:', error);
-  }
-};
-
-startServer();
+  };
+  
+  startLocalServer();
+} else {
+  // Vercel environment: Just log and export app
+  // DB connection will be established lazily by Sequelize on first query
+  console.log('ℹ️ Running in Vercel environment - Server ready');
+}
 
 // Export for Vercel
 module.exports = app;
