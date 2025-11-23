@@ -69,15 +69,8 @@ const getMessages = async (req, res) => {
     }
 
     let messages = [];
-    if (email.provider === 'mailtm') {
-      messages = await emailService.mailtm.getMessages(email.token);
-    } else if (email.provider === '1secmail') {
-      messages = await emailService.onesecmail.getMessages(email.username, email.domain);
-    } else if (email.provider === 'mailgw') {
-      messages = await emailService.mailgw.getMessages(email.token);
-    } else if (email.provider === 'guerrilla') {
-      messages = await emailService.guerrilla.getMessages(email.token);
-    }
+    // Use unified service method
+    messages = await emailService.getMessages(email.provider, email.address, email.token);
 
     // Update message count
     if (messages.length !== email.message_count) {
