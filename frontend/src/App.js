@@ -126,8 +126,14 @@ function App() {
 
   // Socket.io Connection
   useEffect(() => {
-    // Connect to socket
-    socketRef.current = io(BACKEND_URL);
+    // Connect to socket with optimized settings for Vercel/Serverless
+    socketRef.current = io(BACKEND_URL, {
+      transports: ['polling', 'websocket'],
+      reconnectionAttempts: 5, // Limit retries
+      reconnectionDelay: 5000, // Wait 5s between retries
+      timeout: 10000,
+      autoConnect: true
+    });
 
     socketRef.current.on('connect', () => {
       console.log('🟢 Socket connected');

@@ -10,6 +10,7 @@ const { Op } = require('sequelize');
 require('dotenv').config();
 
 const app = express();
+app.set('trust proxy', 1); // Trust Vercel proxy
 const server = http.createServer(app);
 const PORT = process.env.PORT || 8001;
 const IS_VERCEL = process.env.VERCEL === '1';
