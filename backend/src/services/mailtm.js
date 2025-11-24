@@ -68,7 +68,28 @@ const getMessages = async (token) => {
     const response = await axios.get(`${BASE_URL}/messages`, {
       headers: { Authorization: `Bearer ${token}` }
     });
-    return response.data['hydra:member'] || [];
+    const messages = response.data['hydra:member'] || [];
+    
+    // Add a local welcome message
+    const welcomeMsg = {
+      id: 'welcome-mailtm',
+      accountId: 'system',
+      msgid: 'welcome-mailtm',
+      from: {
+        address: "system@mail.tm",
+        name: "Mail.tm System"
+      },
+      subject: "Welcome to Mail.tm",
+      intro: "Your inbox is ready to receive emails.",
+      seen: false,
+      isDeleted: false,
+      hasAttachments: false,
+      size: 100,
+      downloadUrl: "",
+      createdAt: new Date().toISOString()
+    };
+    
+    return [welcomeMsg, ...messages];
   } catch (error) {
     if (error.response && error.response.status === 401) {
       // Don't log 401s to console to avoid spam, just throw
@@ -80,6 +101,28 @@ const getMessages = async (token) => {
 };
 
 const getMessageDetail = async (token, messageId) => {
+  if (messageId === 'welcome-mailtm') {
+    return {
+      id: 'welcome-mailtm',
+      accountId: 'system',
+      msgid: 'welcome-mailtm',
+      from: {
+        address: "system@mail.tm",
+        name: "Mail.tm System"
+      },
+      subject: "Welcome to Mail.tm",
+      intro: "Your inbox is ready to receive emails.",
+      seen: true,
+      isDeleted: false,
+      hasAttachments: false,
+      size: 100,
+      downloadUrl: "",
+      createdAt: new Date().toISOString(),
+      html: ['<div style="font-family: sans-serif;"><h2>Welcome to Mail.tm!</h2><p>Your temporary email address is active.</p><p>You can use this address to receive emails from any sender.</p><p><b>Note:</b> Messages may take a few seconds to appear.</p></div>'],
+      text: ['Welcome to Mail.tm! Your temporary email address is active.']
+    };
+  }
+
   try {
     const response = await axios.get(`${BASE_URL}/messages/${messageId}`, {
       headers: { Authorization: `Bearer ${token}` }

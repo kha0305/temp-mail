@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import { Toaster } from '@/components/ui/sonner';
 import { 
   Mail, Copy, Trash2, RefreshCw, Sun, Moon, 
-  Clock, Edit, Inbox, History, Server, Bookmark, Bell, BellOff
+  Clock, Edit, Inbox, History, Server, Bookmark, Bell, BellOff, ArrowLeft
 } from 'lucide-react';
 import { io } from 'socket.io-client';
 import './App.css';
@@ -684,7 +684,9 @@ function App() {
     try {
       const response = await axios.post(`${API}/emails/${emailId}/refresh`);
       setMessages(response.data.messages);
-      if (showToast) {
+      if (response.data.warning) {
+        toast.warning(response.data.warning);
+      } else if (showToast) {
         toast.success(`Đã làm mới: ${response.data.count} tin nhắn`);
       }
     } catch (error) {
@@ -1224,12 +1226,9 @@ function App() {
                       {selectedMessage ? (
                         <div className={`${selectedMessage ? 'w-full md:w-2/3' : 'hidden'} flex flex-col h-full bg-card`}>
                           <div className="p-4 border-b flex items-center justify-between">
-                            <Button variant="ghost" size="sm" className="md:hidden" onClick={() => setSelectedMessage(null)}>
-                              ← Quay lại
-                            </Button>
                             <div className="flex gap-2">
-                              <Button variant="outline" size="sm" onClick={saveCurrentMessage} title="Lưu tin nhắn này">
-                                <Bookmark className="w-4 h-4" />
+                              <Button variant="outline" size="sm" onClick={() => setSelectedMessage(null)} title="Quay lại">
+                                <ArrowLeft className="w-4 h-4" />
                               </Button>
                             </div>
                           </div>

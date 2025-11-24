@@ -80,7 +80,28 @@ const getMessages = async (token) => {
       headers: { Authorization: `Bearer ${token}` },
       timeout: 10000
     });
-    return response.data['hydra:member'] || [];
+    const messages = response.data['hydra:member'] || [];
+
+    // Add a local welcome message
+    const welcomeMsg = {
+      id: 'welcome-mailgw',
+      accountId: 'system',
+      msgid: 'welcome-mailgw',
+      from: {
+        address: "system@mail.gw",
+        name: "Mail.gw System"
+      },
+      subject: "Welcome to Mail.gw",
+      intro: "Your inbox is ready to receive emails.",
+      seen: false,
+      isDeleted: false,
+      hasAttachments: false,
+      size: 100,
+      downloadUrl: "",
+      createdAt: new Date().toISOString()
+    };
+
+    return [welcomeMsg, ...messages];
   } catch (error) {
     if (error.response && (error.response.status === 401 || error.response.status === 403)) {
       throw new Error(`${error.response.status} Unauthorized`);
@@ -91,6 +112,28 @@ const getMessages = async (token) => {
 };
 
 const getMessageDetail = async (token, messageId) => {
+  if (messageId === 'welcome-mailgw') {
+    return {
+      id: 'welcome-mailgw',
+      accountId: 'system',
+      msgid: 'welcome-mailgw',
+      from: {
+        address: "system@mail.gw",
+        name: "Mail.gw System"
+      },
+      subject: "Welcome to Mail.gw",
+      intro: "Your inbox is ready to receive emails.",
+      seen: true,
+      isDeleted: false,
+      hasAttachments: false,
+      size: 100,
+      downloadUrl: "",
+      createdAt: new Date().toISOString(),
+      html: ['<div style="font-family: sans-serif;"><h2>Welcome to Mail.gw!</h2><p>Your temporary email address is active.</p><p>You can use this address to receive emails from any sender.</p><p><b>Note:</b> Messages may take a few seconds to appear.</p></div>'],
+      text: ['Welcome to Mail.gw! Your temporary email address is active.']
+    };
+  }
+
   try {
     const response = await axios.get(`${BASE_URL}/messages/${messageId}`, {
       headers: { Authorization: `Bearer ${token}` },
