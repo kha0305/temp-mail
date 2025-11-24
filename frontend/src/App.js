@@ -1385,7 +1385,9 @@ function App() {
                     // History Detail View
                     <div className="space-y-6">
                       <div className="flex items-center gap-4 mb-4">
-                        <Button variant="outline" onClick={() => setViewMode('list')}>← Quay lại</Button>
+                        <Button variant="outline" size="icon" onClick={() => setViewMode('list')} title="Quay lại">
+                          <ArrowLeft className="w-4 h-4" />
+                        </Button>
                         <div>
                           <h2 className="text-xl font-bold">{selectedHistoryEmail?.address}</h2>
                           <p className="text-sm text-muted-foreground">Lịch sử tin nhắn</p>
@@ -1417,20 +1419,27 @@ function App() {
                         
                         <Card className="md:col-span-2 overflow-hidden flex flex-col">
                           {selectedMessage ? (
-                            <ScrollArea className="flex-1 p-6">
-                              <h3 className="text-lg font-bold mb-2">{selectedMessage.subject}</h3>
-                              <div className="text-sm text-muted-foreground mb-4 pb-4 border-b">
-                                From: {selectedMessage.from} <br/>
-                                Date: {new Date(selectedMessage.createdAt).toLocaleString()}
+                            <div className="flex flex-col h-full">
+                              <div className="p-4 border-b flex items-center justify-between">
+                                <div className="flex gap-2">
+                                  {/* No back button needed here as it's split view, but maybe useful on mobile? */}
+                                </div>
                               </div>
-                              <div className="prose dark:prose-invert max-w-none">
-                                {selectedMessage.html ? (
-                                  <div dangerouslySetInnerHTML={{ __html: selectedMessage.html[0] }} />
-                                ) : (
-                                  <pre className="whitespace-pre-wrap font-sans">{selectedMessage.text}</pre>
-                                )}
-                              </div>
-                            </ScrollArea>
+                              <ScrollArea className="flex-1 p-6">
+                                <h3 className="text-lg font-bold mb-2">{selectedMessage.subject}</h3>
+                                <div className="text-sm text-muted-foreground mb-4 pb-4 border-b">
+                                  From: {selectedMessage.from} <br/>
+                                  Date: {new Date(selectedMessage.createdAt).toLocaleString()}
+                                </div>
+                                <div className="prose dark:prose-invert max-w-none">
+                                  {selectedMessage.html ? (
+                                    <div dangerouslySetInnerHTML={{ __html: selectedMessage.html[0] }} />
+                                  ) : (
+                                    <pre className="whitespace-pre-wrap font-sans">{selectedMessage.text}</pre>
+                                  )}
+                                </div>
+                              </ScrollArea>
+                            </div>
                           ) : (
                             <div className="flex-1 flex items-center justify-center text-muted-foreground">
                               Chọn tin nhắn để xem
@@ -1511,7 +1520,9 @@ function App() {
                     // Saved Detail View
                     <div className="space-y-6">
                       <div className="flex items-center gap-4 mb-4">
-                        <Button variant="outline" onClick={() => setViewMode('list')}>← Quay lại</Button>
+                        <Button variant="outline" size="icon" onClick={() => setViewMode('list')} title="Quay lại">
+                          <ArrowLeft className="w-4 h-4" />
+                        </Button>
                         <h2 className="text-xl font-bold">Chi tiết Email đã lưu</h2>
                       </div>
                       
