@@ -128,15 +128,22 @@ function App() {
   useEffect(() => {
     // Connect to socket with optimized settings for Vercel/Serverless
     socketRef.current = io(BACKEND_URL, {
+      path: '/socket.io/', // Explicitly set path
       transports: ['polling', 'websocket'],
       reconnectionAttempts: 5, // Limit retries
       reconnectionDelay: 5000, // Wait 5s between retries
       timeout: 10000,
-      autoConnect: true
+      autoConnect: true,
+      withCredentials: true
     });
 
     socketRef.current.on('connect', () => {
       console.log('🟢 Socket connected');
+    });
+
+    socketRef.current.on('connect_error', (err) => {
+      console.warn('⚠️ Socket connection error:', err.message);
+      // If socket fails (e.g. 404 on Vercel), we fallback to polling in useEffect below
     });
 
     socketRef.current.on('messages_update', (newMessages) => {
