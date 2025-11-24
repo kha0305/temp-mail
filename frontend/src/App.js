@@ -1235,7 +1235,7 @@ function App() {
                           <div className="p-4 border-b flex items-center justify-between">
                             <div className="flex gap-2">
                               <Button variant="outline" size="sm" onClick={() => setSelectedMessage(null)} title="Quay lại">
-                                <ArrowLeft className="w-4 h-4" />
+                                <ArrowLeft className="w-4 h-4 mr-2" /> Quay lại
                               </Button>
                             </div>
                           </div>
@@ -1385,8 +1385,8 @@ function App() {
                     // History Detail View
                     <div className="space-y-6">
                       <div className="flex items-center gap-4 mb-4">
-                        <Button variant="outline" size="icon" onClick={() => setViewMode('list')} title="Quay lại">
-                          <ArrowLeft className="w-4 h-4" />
+                        <Button variant="outline" size="sm" onClick={() => setViewMode('list')} title="Quay lại">
+                          <ArrowLeft className="w-4 h-4 mr-2" /> Quay lại
                         </Button>
                         <div>
                           <h2 className="text-xl font-bold">{selectedHistoryEmail?.address}</h2>
@@ -1520,8 +1520,8 @@ function App() {
                     // Saved Detail View
                     <div className="space-y-6">
                       <div className="flex items-center gap-4 mb-4">
-                        <Button variant="outline" size="icon" onClick={() => setViewMode('list')} title="Quay lại">
-                          <ArrowLeft className="w-4 h-4" />
+                        <Button variant="outline" size="sm" onClick={() => setViewMode('list')} title="Quay lại">
+                          <ArrowLeft className="w-4 h-4 mr-2" /> Quay lại
                         </Button>
                         <h2 className="text-xl font-bold">Chi tiết Email đã lưu</h2>
                       </div>
