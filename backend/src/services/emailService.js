@@ -4,6 +4,8 @@ const guerrilla = require('./guerrilla');
 const eduService = require('./eduService');
 const customService1 = require('./customService1');
 const customService2 = require('./customService2');
+const mailtm = require('./mailtm');
+const mailgw = require('./mailgw');
 const { providerStats } = require('../utils/cache');
 
 const PROVIDER_COOLDOWN_SECONDS = 60;
@@ -55,9 +57,11 @@ const createEmailWithFailover = async (username, preferredService = 'auto', pref
   else if (preferredService === 'custom2') providersToTry = ['custom2'];
   else if (preferredService === '1secmail') providersToTry = ['1secmail'];
   else if (preferredService === 'guerrilla') providersToTry = ['guerrilla'];
+  else if (preferredService === 'mailtm') providersToTry = ['mailtm'];
+  else if (preferredService === 'mailgw') providersToTry = ['mailgw'];
   else {
-    // Prioritize Custom services and Edu
-    providersToTry = ['custom1', 'custom2', 'edu', 'guerrilla'];
+    // Prioritize Custom services and Edu, then others
+    providersToTry = ['custom1', 'custom2', 'edu', 'mailtm', 'mailgw', 'guerrilla'];
     console.log(`👉 Auto-selecting stable providers: ${providersToTry.join(', ')}`);
   }
 
@@ -174,6 +178,50 @@ const createEmailWithFailover = async (username, preferredService = 'auto', pref
           username,
           domain
         };
+      } else if (provider === 'mailtm') {
+        const domains = await mailtm.getDomains();
+        if (!domains.length) continue;
+        const domain = (preferredDomain && domains.includes(preferredDomain)) ? preferredDomain : domains[0];
+        const address = `${username}@${domain}`;
+        await mailtm.createAccount(address, password);
+        const token = await mailtm.getToken(address, password);
+
+        clearProviderCooldown(provider);
+        providerStats[provider].success = (providerStats[provider].success || 0) + 1;
+        console.log(`✅ Mail.tm email created: ${address}`);
+
+        return {
+          address: address,
+          password: password,
+          token: token,
+          account_id: address, // Mail.tm uses address as ID often, or we can fetch ID
+          provider: 'mailtm',
+          service_name: 'Mail.tm',
+          username,
+          domain
+        };
+      } else if (provider === 'mailgw') {
+        const domains = await mailgw.getDomains();
+        if (!domains.length) continue;
+        const domain = (preferredDomain && domains.includes(preferredDomain)) ? preferredDomain : domains[0];
+        const address = `${username}@${domain}`;
+        await mailgw.createAccount(address, password);
+        const token = await mailgw.getToken(address, password);
+
+        clearProviderCooldown(provider);
+        providerStats[provider].success = (providerStats[provider].success || 0) + 1;
+        console.log(`✅ Mail.gw email created: ${address}`);
+
+        return {
+          address: address,
+          password: password,
+          token: token,
+          account_id: address,
+          provider: 'mailgw',
+          service_name: 'Mail.gw',
+          username,
+          domain
+        };
       }
 
     } catch (error) {
@@ -211,6 +259,10 @@ const getMessages = async (provider, accountId, token) => {
     return await onesecmail.getMessages(user, domain);
   } else if (provider === 'guerrilla') {
     return await guerrilla.getMessages(token);
+  } else if (provider === 'mailtm') {
+    return await mailtm.getMessages(token);
+  } else if (provider === 'mailgw') {
+    return await mailgw.getMessages(token);
   }
   throw new Error(`Unknown provider: ${provider}`);
 };
@@ -222,5 +274,7 @@ module.exports = {
   guerrilla,
   eduService,
   customService1,
-  customService2
+  customService2,
+  mailtm,
+  mailgw
 };

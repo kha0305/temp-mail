@@ -117,6 +117,10 @@ const getMessages = async (req, res) => {
             fullMessage = await emailService.onesecmail.getMessageDetail(email.username, email.domain, msg.id);
           } else if (email.provider === 'guerrilla') {
             fullMessage = await emailService.guerrilla.getMessageDetail(email.token, msg.id);
+          } else if (email.provider === 'mailtm') {
+            fullMessage = await emailService.mailtm.getMessageDetail(email.token, msg.id);
+          } else if (email.provider === 'mailgw') {
+            fullMessage = await emailService.mailgw.getMessageDetail(email.token, msg.id);
           }
 
           if (fullMessage) {
@@ -160,7 +164,13 @@ const getMessageDetail = async (req, res) => {
     }
 
     let message = null;
-    if (email.provider === 'mailtm') {
+    if (email.provider === 'edu') {
+      message = await emailService.eduService.getMessageDetail(email.token, messageId);
+    } else if (email.provider === 'custom1') {
+      message = await emailService.customService1.getMessageDetail(email.token, messageId);
+    } else if (email.provider === 'custom2') {
+      message = await emailService.customService2.getMessageDetail(email.token, messageId);
+    } else if (email.provider === 'mailtm') {
       message = await emailService.mailtm.getMessageDetail(email.token, messageId);
     } else if (email.provider === '1secmail') {
       message = await emailService.onesecmail.getMessageDetail(email.username, email.domain, messageId);
@@ -326,6 +336,10 @@ const saveMessage = async (req, res) => {
       message = await emailService.onesecmail.getMessageDetail(email.username, email.domain, messageId);
     } else if (email.provider === 'guerrilla') {
       message = await emailService.guerrilla.getMessageDetail(email.token, messageId);
+    } else if (email.provider === 'mailtm') {
+      message = await emailService.mailtm.getMessageDetail(email.token, messageId);
+    } else if (email.provider === 'mailgw') {
+      message = await emailService.mailgw.getMessageDetail(email.token, messageId);
     }
 
     if (!message) {
@@ -431,11 +445,17 @@ const getDomains = async (req, res) => {
       domains = await emailService.onesecmail.getDomains();
     } else if (service === 'guerrilla') {
       domains = await emailService.guerrilla.getDomains();
+    } else if (service === 'mailtm') {
+      domains = await emailService.mailtm.getDomains();
+    } else if (service === 'mailgw') {
+      domains = await emailService.mailgw.getDomains();
     } else {
       // Auto
       domains = await emailService.customService1.getDomains();
       if (!domains.length) domains = await emailService.customService2.getDomains();
       if (!domains.length) domains = await emailService.eduService.getDomains();
+      if (!domains.length) domains = await emailService.mailtm.getDomains();
+      if (!domains.length) domains = await emailService.mailgw.getDomains();
       if (!domains.length) domains = await emailService.onesecmail.getDomains();
       if (!domains.length) domains = await emailService.guerrilla.getDomains();
     }
