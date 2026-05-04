@@ -1,30 +1,51 @@
-const { Sequelize } = require("sequelize");
+const { Sequelize } = require('sequelize');
 const mysql2 = require('mysql2');
-require("dotenv").config();
+const mysql = require('mysql2/promise');
+const env = require('./env');
 
-const sequelize = new Sequelize(
-  process.env.DB_NAME || "temp_mail",
-  process.env.DB_USER || "root",
-  process.env.DB_PASSWORD || "190705",
-  {
-    host: process.env.DB_HOST || "localhost",
-    port: process.env.DB_PORT || 3306,
-    dialect: "mysql",
-    dialectModule: mysql2, // Explicitly provide the dialect module for Vercel
-    logging: false,
-    dialectOptions: process.env.DB_SSL === 'true' ? {
-      ssl: {
-        require: true,
-        rejectUnauthorized: false,
-      },
-    } : {},
-    pool: {
-      max: 5,
-      min: 0,
-      acquire: 30000,
-      idle: 10000,
-    },
+const ensureDatabaseExists = async () => {
+  const connection = await mysql.createConnection({
+    host: env.db.host,
+    port: env.db.port,
+    user: env.db.user,
+    password: env.db.password,
+    ssl: env.db.ssl
+      ? {
+          rejectUnauthorized: false,
+        }
+      : undefined,
+  });
+
+  try {
+    await connection.query(
+      `CREATE DATABASE IF NOT EXISTS \`${env.db.name}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`,
+    );
+  } finally {
+    await connection.end();
   }
-);
+};
+
+const sequelize = new Sequelize(env.db.name, env.db.user, env.db.password, {
+  host: env.db.host,
+  port: env.db.port,
+  dialect: 'mysql',
+  dialectModule: mysql2,
+  logging: false,
+  dialectOptions: env.db.ssl
+    ? {
+        ssl: {
+          require: true,
+          rejectUnauthorized: false,
+        },
+      }
+    : {},
+  pool: {
+    max: 5,
+    min: 0,
+    acquire: 30000,
+    idle: 10000,
+  },
+});
 
 module.exports = sequelize;
+module.exports.ensureDatabaseExists = ensureDatabaseExists;

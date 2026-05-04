@@ -1,0 +1,19 @@
+{
+  "name": "temp-mail-workspace",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Root launcher for Temp Mail frontend and backend",
+  "scripts": {
+    "install:all": "npm install --prefix backend && yarn --cwd frontend install",
+    "dev": "concurrently -n backend,frontend -c cyan,magenta \"npm --prefix backend run dev\" \"yarn --cwd frontend start\"",
+    "start": "concurrently -n backend,frontend -c cyan,magenta \"npm --prefix backend start\" \"yarn --cwd frontend start\"",
+    "db:init": "node scripts/init-db.js",
+    "backend": "npm --prefix backend run dev",
+    "frontend": "yarn --cwd frontend start",
+    "build:frontend": "yarn --cwd frontend build",
+    "verify": "yarn --cwd frontend build && node scripts/verify-workspace.js"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

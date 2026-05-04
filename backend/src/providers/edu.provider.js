@@ -1,0 +1,50 @@
+const { v4: uuidv4 } = require('uuid');
+
+const PROVIDER_KEY = 'edu';
+
+const getDomains = async () => ['student.edu.pl', 'faculty.edu.pl', 'student.edu.uka', 'research.edu.uka'];
+
+const createAccount = async ({ username, domain }) => ({
+  address: `${username}@${domain}`,
+  password: 'mock-password',
+  token: uuidv4(),
+  account_id: `${username}@${domain}`,
+  username,
+  domain,
+});
+
+const getMessages = async () => [
+  {
+    id: 'welcome-msg-edu',
+    accountId: 'student@university.edu',
+    msgid: 'welcome-msg-edu',
+    from: {
+      address: 'admin@university.edu',
+      name: 'University Admin',
+    },
+    subject: 'Welcome to EduMail',
+    intro: 'Your educational email is ready.',
+    seen: false,
+    isDeleted: false,
+    hasAttachments: false,
+    size: 1024,
+    downloadUrl: '',
+    createdAt: new Date().toISOString(),
+    html: ['<p>Welcome,</p><p>Your .edu email is active.</p>'],
+    text: ['Welcome, Your .edu email is active.'],
+  },
+];
+
+const getMessageDetail = async (mailbox, messageId) => {
+  const messages = await getMessages(mailbox);
+  return messages.find((message) => message.id === messageId) || null;
+};
+
+module.exports = {
+  key: PROVIDER_KEY,
+  label: 'Edu Mail',
+  getDomains,
+  createAccount,
+  getMessages,
+  getMessageDetail,
+};

@@ -1,56 +1,94 @@
-# Temp Mail Backend (Node.js)
+# Temp Mail Backend
 
-This is the Node.js version of the Temp Mail backend, replacing the Python/FastAPI version.
+Backend Node.js đã được tách lại theo cấu trúc module hóa để dễ bảo trì và mở rộng.
 
-## Prerequisites
+## Cấu trúc
 
-- Node.js (v16+)
-- MySQL Database
+```text
+src/
+├─ app.js
+├─ server.js
+├─ config/
+├─ constants/
+├─ middlewares/
+├─ models/
+├─ providers/
+├─ repositories/
+├─ routes/
+│  ├─ domains/
+│  ├─ emails/
+│  ├─ history/
+│  ├─ root/
+│  └─ saved/
+├─ services/
+├─ sockets/
+└─ utils/
+```
 
-## Installation
+## Nguyên tắc
 
-1. Install dependencies:
+- Mỗi model ở một file riêng.
+- Mỗi endpoint API ở một file route riêng.
+- Route chỉ mỏng, business logic nằm ở service.
+- Truy cập DB đi qua repository.
+- Provider email dùng chung một registry với interface thống nhất.
 
-   ```bash
-   npm install
-   ```
+## Chạy backend
 
-2. Configure environment variables:
-   Create a `.env` file in this directory with the following content:
-   ```env
-   DB_HOST=localhost
-   DB_PORT=3306
-   DB_USER=root
-   DB_PASSWORD=190705
-   DB_NAME=temp_mail
-   PORT=8001
-   CORS_ORIGINS=*
-   ```
+```bash
+npm install
+npm run dev
+```
 
-## Running the Server
+## SQL Khởi Tạo Database
 
-- Development mode (with hot reload):
+Nếu cần tạo DB thủ công trước khi chạy backend:
 
-  ```bash
-  npm run dev
-  ```
+```bash
+mysql -u root -p < ../deployment/sql/create-temp-mail-db.sql
+```
 
-- Production mode:
-  ```bash
-  npm start
-  ```
+Hoặc từ thư mục gốc:
 
-## API Documentation
+```bash
+npm run db:init
+```
 
-The API runs on `http://localhost:8001/api`.
-Endpoints match the previous Python backend to ensure frontend compatibility.
+File SQL sẽ tạo database `temp_mail` cùng các bảng:
+- `temp_emails`
+- `email_history`
+- `saved_emails`
 
-- `GET /api/` - Health check and provider status
-- `POST /api/emails/create` - Create new email
-- `GET /api/emails` - List emails
-- `GET /api/emails/:id` - Get email details
-- `POST /api/emails/:id/refresh` - Refresh messages
-- `GET /api/emails/:id/messages/:messageId` - Get message details
-- `POST /api/emails/:id/extend-time` - Extend email expiry
-- `DELETE /api/emails/:id` - Delete email
-- `GET /api/domains` - Get available domains
+## Environment
+
+```env
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=190705
+DB_NAME=temp_mail
+PORT=8001
+CORS_ORIGINS=http://localhost:3000
+```
+
+## API surface
+
+- `GET /api/`
+- `POST /api/emails/create`
+- `GET /api/emails`
+- `GET /api/emails/:id`
+- `GET /api/emails/:id/messages`
+- `POST /api/emails/:id/refresh`
+- `GET /api/emails/:id/messages/:messageId`
+- `POST /api/emails/:id/extend-time`
+- `DELETE /api/emails/:id`
+- `POST /api/emails/:id/messages/:messageId/save`
+- `POST /api/emails/:id/save`
+- `GET /api/emails/history/list`
+- `GET /api/emails/history/:id/messages`
+- `GET /api/emails/history/:id/messages/:messageId`
+- `DELETE /api/emails/history/delete`
+- `GET /api/emails/saved/list`
+- `GET /api/emails/saved/:id`
+- `DELETE /api/emails/saved/delete`
+- `GET /api/domains`
